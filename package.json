@@ -1,0 +1,20 @@
+{
+	"name": "lambda-lang",
+	"version": "0.0.0",
+	"private": false,
+	"type": "module",
+	"scripts": {
+		"ts:check": "tsc --pretty",
+		"preview": "vite preview",
+		"build": "vite build",
+		"fmt": "dprint fmt",
+		"dev": "vite"
+	},
+	"devDependencies": {
+		"@types/node": "^18.0.6",
+		"dprint": "^0.30.3",
+		"typescript": "^4.7.4",
+		"vite": "^3.0.2",
+		"vitest": "^0.18.1"
+	}
+}
