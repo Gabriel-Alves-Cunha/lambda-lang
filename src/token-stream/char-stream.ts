@@ -35,7 +35,7 @@ export function charStream(input: Readonly<string>): CharStream {
 
 	const croak = (msg: string): never => {
 		throw new Error(
-			`${msg} (at line: ${line}, column: ${column}, pos: ${pos}).`,
+			`${msg} (at line: ${line}, column: ${column}).`,
 		);
 	};
 

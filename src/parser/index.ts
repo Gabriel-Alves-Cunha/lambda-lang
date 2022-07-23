@@ -1,4 +1,5 @@
 import { Char, Operator, ValueOf } from "../@types/general-types";
+import { dbg, stringifyJson } from "../utils/utils";
 import { TokenStream } from "../token-stream";
 
 /////////////////////////////////////////////////
@@ -96,7 +97,7 @@ export function parse(input: TokenStream): AST {
 	/////////////////////////////////////////////////
 
 	const unexpected = (): never =>
-		input.croak(`Unexpected token: ${JSON.stringify(input.peek(), null, 2)}`);
+		input.croak(`Unexpected token: ${stringifyJson(input.peek())}`);
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -200,7 +201,7 @@ export function parse(input: TokenStream): AST {
 		const program: AST[] = [];
 
 		while (!input.eof()) {
-			console.log("program =", JSON.stringify(program, null, 2));
+			dbg("program =", stringifyJson(program));
 
 			program.push(parseExpression());
 
@@ -220,7 +221,7 @@ export function parse(input: TokenStream): AST {
 		if (name?.type !== "Variable name")
 			input.croak(
 				`Expected input of type "Variable name", got input = ${
-					JSON.stringify(input, null, 2)
+					stringifyJson(input)
 				}.`,
 			);
 
@@ -301,6 +302,8 @@ export function parse(input: TokenStream): AST {
 	const parseExpression = (): AST =>
 		maybeCall(() => maybeBinary(parseAtom(), 0));
 
+	/////////////////////////////////////////////////
+
 	/**
 	 * Does the main dispatching job, depending on the current token.
 	 *
@@ -311,7 +314,7 @@ export function parse(input: TokenStream): AST {
 	 * identifier, it's just returned as is. And if nothing works,
 	 * unexpected() will throw an error.
 	 */
-	const parseAtom = (): AST =>
+	const parseAtom = () =>
 		maybeCall((): AST => {
 			if (isPunctuation("(")) {
 				input.next();

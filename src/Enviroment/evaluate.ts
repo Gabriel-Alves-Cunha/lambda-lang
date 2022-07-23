@@ -1,6 +1,6 @@
+import { dbg, stringifyJson, time } from "../utils/utils";
 import { Enviroment } from ".";
 import { Operator } from "../@types/general-types";
-import { time } from "../utils/utils";
 import { AST } from "../parser";
 
 export function evaluate(expression: AST, environment: Enviroment): unknown {
@@ -32,7 +32,7 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 					 */
 					if (expression.left.type !== "Variable name")
 						throw new Error(
-							`Cannot assign to ${JSON.stringify(expression.left)}`,
+							`Cannot assign to ${stringifyJson(expression.left)}`,
 						);
 
 					return environment.set(
@@ -131,9 +131,7 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 
 				default: {
 					throw new Error(
-						`I don't know how to evaluate this: ${
-							JSON.stringify(expression, null, 2)
-						}`,
+						`I don't know how to evaluate this: ${stringifyJson(expression)}`,
 					);
 				}
 
@@ -141,17 +139,23 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 			}
 		},
 		`\nevaluate(expression: AST = ${
-			JSON.stringify(expression, null, 2)
-		}, environment: Enviroment = ${JSON.stringify(environment, null, 2)})`,
+			stringifyJson(expression)
+		}, environment: Enviroment = ${stringifyJson(environment)}).`,
 	);
 
-	console.log("\n`evaluate()` result is:", {
-		typeof: typeof ret,
-		ret: JSON.stringify(ret, null, 2),
-	});
+	dbg(
+		`\n"evaluate()" result is: ${
+			stringifyJson({ typeof: typeof ret, ret })
+		}.\n`,
+	);
 
 	return ret;
 }
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+// Helper functions:
 
 function applyOperand(
 	operator: Operator,
@@ -159,7 +163,8 @@ function applyOperand(
 	right: unknown,
 ): unknown | number {
 	const num = (x: unknown): number => {
-		if (typeof x !== "number") throw new Error(`Expected number, got: ${x}`);
+		if (typeof x !== "number")
+			throw new Error(`Expected number, got: ${stringifyJson(x)}`);
 
 		return x;
 	};
@@ -219,6 +224,8 @@ function applyOperand(
 	}
 }
 
+/////////////////////////////////////////////////
+
 /**
  * It returns a plain JavaScript function that
  * encloses over the environment and the expression to evaluate.
@@ -234,9 +241,7 @@ function makeLambda(environment: Enviroment, expression: AST) {
 		// This is just to please Typescript:
 		if (expression.type !== "lambda (function)")
 			throw new Error(
-				`"Should never get here! expression = ${
-					JSON.stringify(expression, null, 2)
-				}`,
+				`"Should never get here! expression = ${stringifyJson(expression)}`,
 			);
 		//
 

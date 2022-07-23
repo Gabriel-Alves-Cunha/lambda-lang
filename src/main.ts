@@ -1,22 +1,29 @@
 import { tokenStream } from "./token-stream";
-import { charStream } from "./token-stream/char-stream";
-import { Enviroment } from "./Enviroment";
-import { evaluate } from "./Enviroment/evaluate";
-import { parse } from "./parser";
 
-// Some test code here:
-const code = "sum = lambda(x, y) x + y; log(sum(2, 3));";
+import { makeEnviroment } from "./Enviroment";
+import { charStream } from "./token-stream/char-stream";
+import { evaluate } from "./Enviroment/evaluate";
+import { internal } from "./code/internal";
+import { parse } from "./parser";
+import { time } from "./utils/utils";
 
 // Remember, parse takes a TokenStream which takes an CharStream:
-const ast = parse(tokenStream(charStream(code)));
+const ast = time(
+	() => parse(tokenStream(charStream(internal))),
+	"parse(internal)",
+);
 
 // Create the global environment:
-const globalEnv = new Enviroment();
+const globalEnv = makeEnviroment();
 
-// Define the `log` primite function:
+// Define the `log` primitive function:
 globalEnv.def("log", function(...args: any[]) {
-	console.log("log from lambda:", ...args);
+	console.log(...args);
+});
+// Defining the `print` primitive function:
+globalEnv.def("print", function(...args: any[]) {
+	process.stdout.write(args.join(" "));
 });
 
 // Run the evaluator:
-evaluate(ast, globalEnv); // Should log `5`.
+time(() => evaluate(ast, globalEnv), "evaluate code"); // Should log `5`.

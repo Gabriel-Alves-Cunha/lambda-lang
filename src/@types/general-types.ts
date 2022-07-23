@@ -16,7 +16,7 @@ export const operators = Object.freeze(
 		// "|",
 		"<",
 		">",
-		// "!",
+		"!",
 		"&&",
 		"||",
 		"<=",

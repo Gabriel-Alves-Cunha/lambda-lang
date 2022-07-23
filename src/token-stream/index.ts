@@ -13,8 +13,8 @@ import {
 	Char,
 } from "../@types/general-types";
 
-const identifiers = "?!-<>=0123456789";
 const identifiersAllowedFirstLetters = /[a-zλ_]/i;
+const identifiers = "?!-<>=0123456789";
 const digit = /[0-9]/i;
 
 export function tokenStream(input: CharStream): TokenStream {
@@ -77,10 +77,9 @@ export function tokenStream(input: CharStream): TokenStream {
 		while (!input.eof()) {
 			const char = input.next();
 
-			if (escaped) {
-				str += char;
-				escaped = false;
-			} else if (char === "\\")
+			if (escaped)
+				str += char, escaped = false;
+			else if (char === "\\")
 				escaped = true;
 			else if (char === end)
 				break;
@@ -145,7 +144,7 @@ export function tokenStream(input: CharStream): TokenStream {
 
 	/////////////////////////////////////////////////
 
-	const peek = (): Token | undefined => current || (current = readNext());
+	const peek = (): Token | undefined => current ?? (current = readNext());
 
 	/////////////////////////////////////////////////
 
@@ -153,7 +152,7 @@ export function tokenStream(input: CharStream): TokenStream {
 		const token = current;
 		current = undefined;
 
-		return token || readNext();
+		return token ?? readNext();
 	};
 
 	/////////////////////////////////////////////////

@@ -1,10 +1,14 @@
+import { debug } from "debug";
+
 export function assertUnreachable(received: never): never {
-	const error = JSON.stringify(received, null, 2) ?? received;
+	const error = stringifyJson(received) ?? received;
 
 	throw new Error(
 		"I shouldn't get here (on 'assertUnreachable')!\nreceived = " + error,
 	);
 }
+
+/////////////////////////////////////////////////
 
 export function time<T>(fn: () => T, label: string): T {
 	const start = performance.now();
@@ -13,7 +17,7 @@ export function time<T>(fn: () => T, label: string): T {
 
 	const end = performance.now();
 
-	console.info(
+	dbg(
 		`%cFunction %c"${label}" %ctook: ${end - start} ms.`,
 		"color:brown",
 		"color:blue",
@@ -22,3 +26,13 @@ export function time<T>(fn: () => T, label: string): T {
 
 	return fnReturn as T;
 }
+
+/////////////////////////////////////////////////
+
+export function stringifyJson(obj: unknown): string | undefined {
+	return JSON.stringify(obj, null, 2);
+}
+
+/////////////////////////////////////////////////
+
+export const dbg = debug("lambda:debug");
