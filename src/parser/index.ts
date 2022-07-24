@@ -475,22 +475,22 @@ export type AST = Readonly<
 	| ({ type: "If"; } & If)
 >;
 
-type Lambda = {
+export type Lambda = {
 	functionName: string | undefined;
 	variables: readonly VariableName[];
 	body: AST;
 };
-type VariableDefinition = { definition: AST | undefined; name: string; };
-type Let = { variables: readonly VariableDefinition[]; body: AST; };
-type If = { condition: AST; then: AST; else: AST | undefined; };
-type Binary = { operator: Operator; left: AST; right: AST; };
-type Assign = { operator: "="; left: AST; right: AST; };
-type FunctionCall = { args: readonly AST[]; fn: AST; };
-type Program = { program: readonly AST[]; };
-type Boolean = { value: true | false; };
-type VariableName = { value: string; };
-type Number = { value: number; };
-type String = { value: string; };
+export type VariableDefinition = { definition: AST | undefined; name: string; };
+export type Let = { variables: readonly VariableDefinition[]; body: AST; };
+export type If = { condition: AST; then: AST; else: AST | undefined; };
+export type Binary = { operator: Operator; left: AST; right: AST; };
+export type Assign = { operator: "="; left: AST; right: AST; };
+export type FunctionCall = { args: readonly AST[]; fn: AST; };
+export type Program = { program: readonly AST[]; };
+export type Boolean = { value: true | false; };
+export type VariableName = { value: string; };
+export type Number = { value: number; };
+export type String = { value: string; };
 
 /////////////////////////////////////////////////
 

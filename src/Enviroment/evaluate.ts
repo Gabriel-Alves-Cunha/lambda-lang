@@ -1,12 +1,14 @@
 import { assertUnreachable, dbg, stringifyJson, time } from "../utils/utils";
 import { Enviroment } from ".";
 import { Operator } from "../@types/general-types";
-import { AST } from "../parser";
+import { AST, Lambda } from "../parser";
 
 export function evaluate(expression: AST, environment: Enviroment): unknown {
 	const ret: unknown = time(
 		() => {
-			switch (expression.type) {
+			const { type } = expression;
+
+			switch (type) {
 				// For constant nodes, we just return their value:
 				case "Boolean":
 				case "Number":
@@ -167,13 +169,13 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 				/////////////////////////////////////////////////
 
 				default: {
-					assertUnreachable(expression.type);
+					assertUnreachable(type);
 				}
 
 					/////////////////////////////////////////////////
 			}
 		},
-		`\nevaluate(expression: AST = ${
+		`evaluate(expression: AST = ${
 			stringifyJson(expression)
 		}, environment: Enviroment = ${stringifyJson(environment)}).`,
 	);
@@ -196,7 +198,7 @@ function isNumber(x: unknown): x is number {
 	return typeof x === "number";
 }
 
-function applyOperand(
+export function applyOperand(
 	operator: Operator,
 	left: unknown,
 	right: unknown,
@@ -275,7 +277,12 @@ function applyOperand(
  * argument list, the missing ones will get the value `false`). And
  * then it just evaluates the body in the new scope.
  */
-function makeLambda(environment: Enviroment, expression: AST) {
+function makeLambda(
+	environment: Enviroment,
+	expression:
+		& { type: "Lambda"; }
+		& Lambda, // AST
+) {
 	console.assert(
 		expression.type === "Lambda",
 		"[ERROR] expression should of type 'Lambda'! got =",

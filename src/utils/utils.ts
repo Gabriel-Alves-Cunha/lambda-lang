@@ -1,5 +1,3 @@
-import { debug } from "debug";
-
 export function assertUnreachable(received: never): never {
 	const error = stringifyJson(received) ?? received;
 
@@ -39,4 +37,16 @@ export function stringifyJson(obj: unknown): string | undefined {
 
 /////////////////////////////////////////////////
 
+function debug(label: string): (...args: any[]) => void {
+	// @ts-ignore
+	if (process.env.DEBUG !== label)
+		return (...args: any[]) => console.log(`[${label}] `, ...args);
+	else
+		return () => {
+			console.log("log not activated");
+		};
+}
+
 export const dbg = debug("lambda:debug");
+
+dbg("Hello to the debug side!");
