@@ -3,16 +3,19 @@
 	"version": "0.0.0",
 	"private": false,
 	"type": "module",
+	"license": "MIT",
 	"scripts": {
+		"dev": "cross-env DEBUG=lambda:debug node dist/main.js > txt",
+		"full": "yarn build && yarn dev",
+		"term": "node dist/main.js",
 		"ts:check": "tsc --pretty",
-		"preview": "vite preview",
 		"build": "vite build",
-		"fmt": "dprint fmt",
-		"dev": "vite"
+		"fmt": "dprint fmt"
 	},
 	"devDependencies": {
 		"@types/debug": "^4.1.7",
 		"@types/node": "^18.0.6",
+		"cross-env": "^7.0.3",
 		"dprint": "^0.30.3",
 		"typescript": "^4.7.4",
 		"vite": "^3.0.2",

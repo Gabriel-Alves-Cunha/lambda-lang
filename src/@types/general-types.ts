@@ -27,7 +27,7 @@ export const operators = Object.freeze(
 );
 
 export const keywords = Object.freeze(
-	["lambda", "false", "then", "else", "true", "if", "λ"] as const,
+	["lambda", "false", "then", "else", "true", "if", "λ", "let"] as const,
 );
 
 export const punctuations = Object.freeze(
@@ -84,7 +84,7 @@ export type Token = Readonly<
 	// Specifics:
 	| { type: "Punctuation"; value: Punctuation; }
 	| { type: "Identifier"; value: Identifier; }
-	| { type: "Variable name"; value: string; }
+	| { type: "VariableName"; value: string; }
 	| { type: "Operator"; value: Operator; }
 	| { type: "Keyword"; value: Keyword; }
 	| { type: "String"; value: string; }

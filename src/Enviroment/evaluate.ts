@@ -1,4 +1,4 @@
-import { dbg, stringifyJson, time } from "../utils/utils";
+import { assertUnreachable, dbg, stringifyJson, time } from "../utils/utils";
 import { Enviroment } from ".";
 import { Operator } from "../@types/general-types";
 import { AST } from "../parser";
@@ -15,7 +15,7 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 
 				/////////////////////////////////////////////////
 
-				case "Variable name":
+				case "VariableName":
 					// Variables are fetched from the environment. Remember
 					// that "Variable name" tokens contain the name in the value property:
 					return environment.get(expression.value);
@@ -30,15 +30,17 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 					 * use env.set to set the value. Note that the value needs
 					 * to be computed first by calling evaluate recursively.
 					 */
-					if (expression.left.type !== "Variable name")
+					if (expression.left.type !== "VariableName")
 						throw new Error(
 							`Cannot assign to ${stringifyJson(expression.left)}`,
 						);
 
-					return environment.set(
+					environment.set(
 						expression.left.value,
 						evaluate(expression.right, environment),
 					);
+
+					return;
 				}
 
 				/////////////////////////////////////////////////
@@ -58,7 +60,7 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 
 				/////////////////////////////////////////////////
 
-				case "lambda (function)": {
+				case "Lambda": {
 					/**
 					 * A "lambda (function)" node will actually result in a JavaScript closure,
 					 * so it will be callable from JavaScript just like an ordinary
@@ -69,7 +71,7 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 
 				/////////////////////////////////////////////////
 
-				case "if": {
+				case "If": {
 					/**
 					 * Evaluating an "if" node is simple: first evaluate the condition.
 					 * If it's not false then evaluate the "then" branch and return its
@@ -82,9 +84,11 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 							environment,
 						);
 
-					return expression.else ?
+					const result = expression.else ?
 						evaluate(expression.else, environment) :
 						false;
+
+					return result;
 				}
 
 				/////////////////////////////////////////////////
@@ -107,7 +111,7 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 
 				/////////////////////////////////////////////////
 
-				case "Function call": {
+				case "FunctionCall": {
 					/**
 					 * For a "call" node we need to call a function. First we
 					 * evaluate the function, which should return a normal JS function,
@@ -121,18 +125,49 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 						{ fn, type: typeof fn },
 					);
 
-					return (fn as Function).apply(
+					const result: unknown = (fn as Function).apply(
 						null,
 						expression.args.map(arg => evaluate(arg, environment)),
+					);
+
+					return result;
+				}
+
+				/////////////////////////////////////////////////
+
+				case "VariableDefinition": {
+					throw new Error(
+						"TODO: unhandled VariableDefinition case in evaluate()",
 					);
 				}
 
 				/////////////////////////////////////////////////
 
+				case "Let": {
+					// Note it extends the scope for each variable,
+					// defining the variable by evaluating the initialization
+					// code, if any. Then just evaluate the let body.
+					expression.variables.forEach(variable => {
+						const scope = environment.extend(variable.name);
+						scope.def(
+							variable.name,
+							variable.definition ?
+								evaluate(variable.definition, environment) :
+								false,
+						);
+
+						environment = scope;
+					});
+
+					const result = evaluate(expression.body, environment);
+
+					return result;
+				}
+
+				/////////////////////////////////////////////////
+
 				default: {
-					throw new Error(
-						`I don't know how to evaluate this: ${stringifyJson(expression)}`,
-					);
+					assertUnreachable(expression.type);
 				}
 
 					/////////////////////////////////////////////////
@@ -157,13 +192,17 @@ export function evaluate(expression: AST, environment: Enviroment): unknown {
 /////////////////////////////////////////////////
 // Helper functions:
 
+function isNumber(x: unknown): x is number {
+	return typeof x === "number";
+}
+
 function applyOperand(
 	operator: Operator,
 	left: unknown,
 	right: unknown,
 ): unknown | number {
 	const num = (x: unknown): number => {
-		if (typeof x !== "number")
+		if (!isNumber(x))
 			throw new Error(`Expected number, got: ${stringifyJson(x)}`);
 
 		return x;
@@ -233,25 +272,44 @@ function applyOperand(
  * closure is created — but when it's called, it will extend the
  * environment that it saved at creation time with the new bindings
  * of arguments/values (if less values are passed than the function's
- * argument list, the missing ones will get the value false). And
+ * argument list, the missing ones will get the value `false`). And
  * then it just evaluates the body in the new scope.
  */
 function makeLambda(environment: Enviroment, expression: AST) {
-	return function lambda() {
+	console.assert(
+		expression.type === "Lambda",
+		"[ERROR] expression should of type 'Lambda'! got =",
+		stringifyJson(expression),
+	);
+
+	// If the function name is present, then we extend the
+	// scope right when the closure is created and define
+	// the name to point to the newly created closure.
+	if (expression.type === "Lambda" && expression.functionName) {
+		console.log("There is a functionName =", expression.functionName);
+
+		environment = environment.extend();
+		environment.def(expression.functionName, lambda);
+	}
+
+	// Function lambda cannot be a closure (`return () => {...}`), don't know why...
+	function lambda() {
 		// This is just to please Typescript:
-		if (expression.type !== "lambda (function)")
+		if (expression.type !== "Lambda")
 			throw new Error(
 				`"Should never get here! expression = ${stringifyJson(expression)}`,
 			);
 		//
 
-		const names = expression.variableNames;
+		const names = expression.variables;
 		const scope = environment.extend();
 
-		names.forEach((name, index) =>
-			scope.def(name, index < arguments.length ? arguments[index] : false)
+		names.forEach(({ value }, index) =>
+			scope.def(value, index < arguments.length ? arguments[index] : false)
 		);
 
 		return evaluate(expression.body, scope);
-	};
+	}
+
+	return lambda;
 }

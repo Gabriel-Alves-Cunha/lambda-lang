@@ -62,7 +62,7 @@ export function tokenStream(input: CharStream): TokenStream {
 
 		const token: Token = isKeyword(identifier) ?
 			{ type: "Keyword", value: identifier as Keyword } :
-			{ type: "Variable name", value: identifier };
+			{ type: "VariableName", value: identifier };
 
 		return token;
 	};

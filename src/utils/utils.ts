@@ -30,7 +30,11 @@ export function time<T>(fn: () => T, label: string): T {
 /////////////////////////////////////////////////
 
 export function stringifyJson(obj: unknown): string | undefined {
-	return JSON.stringify(obj, null, 2);
+	return JSON.stringify(
+		typeof obj === "function" ? obj.toString() : obj,
+		null,
+		2,
+	);
 }
 
 /////////////////////////////////////////////////

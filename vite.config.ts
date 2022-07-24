@@ -20,7 +20,7 @@ export default defineConfig({
 				entryFileNames: "[name].js",
 				chunkFileNames: "[name].js",
 				minifyInternalExports: true,
-				sourcemap: true,
+				sourcemap: false,
 				compact: true,
 				format: "esm",
 				globals: {},
@@ -33,13 +33,13 @@ export default defineConfig({
 		emptyOutDir: true,
 		minify: "esbuild",
 		target: "esnext",
-		sourcemap: true,
+		sourcemap: false,
 	},
 
 	esbuild: {
 		treeShaking: true,
 		target: "esnext",
-		sourcemap: true,
+		sourcemap: false,
 		format: "esm",
 	},
 

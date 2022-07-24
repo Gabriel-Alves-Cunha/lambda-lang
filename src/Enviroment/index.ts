@@ -1,4 +1,5 @@
 export type Enviroment = {
+	name: string;
 	parent: Readonly<Enviroment | undefined>;
 	variables: Record<string, unknown>;
 	/** To find the scope where the variable with the given name is defined. */
@@ -13,18 +14,22 @@ export type Enviroment = {
 	/** To get the current value of a variable. Throws an error if the variable is not defined. */
 	get(name: string): unknown;
 	/** To create a subscope. */
-	extend(): Enviroment;
+	extend(newId?: string): Enviroment;
 };
 
-export function makeEnviroment(parent?: Enviroment): Enviroment {
+export function makeEnviroment(
+	name = "anonymous lambda",
+	parent?: Enviroment,
+): Enviroment {
 	const env: Enviroment = {
 		variables: Object.create(parent ? parent.variables : null),
 		parent,
+		name,
 
 		/////////////////////////////////////////////////
 
-		extend() {
-			return makeEnviroment(this);
+		extend(newId?: string) {
+			return makeEnviroment(newId, this);
 		},
 
 		/////////////////////////////////////////////////
@@ -46,7 +51,7 @@ export function makeEnviroment(parent?: Enviroment): Enviroment {
 		get(name: string): unknown {
 			if (name in this.variables) return this.variables[name];
 
-			throw new Error(`Undefined variable: "${name}".`);
+			throw new Error(`Undefined variable at Enviroment.get("${name}").`);
 		},
 
 		/////////////////////////////////////////////////
@@ -56,7 +61,7 @@ export function makeEnviroment(parent?: Enviroment): Enviroment {
 
 			// Let's not allow defining globals from a nested environment
 			if (!scope && this.parent)
-				throw new Error(`Undefined variable: "${name}".`);
+				throw new Error(`Undefined variable at Enviroment.set("${name}").`);
 
 			(scope ?? this).variables[name] = value;
 		},
@@ -70,66 +75,3 @@ export function makeEnviroment(parent?: Enviroment): Enviroment {
 
 	return env;
 }
-
-// export class Enviroment {
-// 	parent: Readonly<Enviroment | undefined>;
-// 	variables: Record<string, unknown>;
-//
-// 	/////////////////////////////////////////////////
-//
-// 	constructor(parent: Enviroment | undefined = undefined) {
-// 		this.variables = Object.create(parent ? parent.variables : null);
-// 		this.parent = parent;
-// 	}
-//
-// 	/////////////////////////////////////////////////
-//
-// 	extend = () => new Enviroment(this);
-//
-// 	/////////////////////////////////////////////////
-//
-// 	/** To find the scope where the variable with the given name is defined */
-// 	lookup(name: string): Enviroment | undefined {
-// 		let scope: Enviroment | undefined = this;
-//
-// 		while (scope) {
-// 			if (Object.hasOwn(scope.variables, name)) return scope;
-//
-// 			scope = scope.parent;
-// 		}
-//
-// 		return undefined;
-// 	}
-//
-// 	/////////////////////////////////////////////////
-//
-// 	/** To get the current value of a variable. Throws an error if the variable is not defined */
-// 	get(name: string): unknown {
-// 		if (name in this.variables) return this.variables[name];
-//
-// 		throw new Error(`Undefined variable: "${name}".`);
-// 	}
-//
-// 	/////////////////////////////////////////////////
-//
-// 	/** To set the value of a variable. This needs to lookup the actual scope
-// 	 * where the variable is defined. If it's not found and we're not in the
-// 	 * global scope, throws an error
-// 	 */
-// 	set(name: string, value: unknown): void {
-// 		const scope = this.lookup(name);
-//
-// 		// Let's not allow defining globals from a nested environment
-// 		if (!scope && this.parent)
-// 			throw new Error(`Undefined variable: "${name}".`);
-//
-// 		(scope ?? this).variables[name] = value;
-// 	}
-//
-// 	/////////////////////////////////////////////////
-//
-// 	/** This creates (or shadows, or overwrites) a variable in the current scope */
-// 	def(name: string, value: unknown): void {
-// 		this.variables[name] = value;
-// 	}
-// }

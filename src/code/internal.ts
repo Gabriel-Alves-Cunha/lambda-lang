@@ -83,4 +83,34 @@ set-cdr(x, 20);
 log(car(x));
 log(cdr(x));
 
+log(let loop (n = 100)
+	if n > 0 then n + loop(n - 1)
+	else 0
+);
+
+let (x = 2, y = x + 1, z = x + y) log(x + y + z);
+
+# errors out, the vars are bound to the let body
+# print(x + y + z);
+
+let (x = 10) {
+  let (x = x * 2, y = x * x) {
+    log(x); ## 20
+    log(y); ## 400
+  };
+
+  log(x); ## 10
+};
+
+fib = λ(n) if n < 2 then n
+	else fib(n - 1) + fib(n - 2);
+
+log(time(λ() fib(10), "fib(10)"));
+log(time(λ() fibJS(10), "fibJS(10)"));
+
+log("---------");
+
+# log(time(λ() fib(25), "fib(25)")); # takes a long time and hundreds of MB of parse dbg logs!
+# log(time(λ() fibJS(25), "fibJS(25)"));
+
 `;

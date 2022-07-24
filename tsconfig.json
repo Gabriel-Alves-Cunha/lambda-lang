@@ -1,40 +1,40 @@
 {
-  "compilerOptions": {
-    "lib": [
-      "ESNext",
-    ],
-    "noPropertyAccessFromIndexSignature": true,
-    "useUnknownInCatchVariables": true,
-    "noFallthroughCasesInSwitch": true,
-    "exactOptionalPropertyTypes": true,
-    "noUncheckedIndexedAccess": true,
-    "useDefineForClassFields": true,
-    "strictFunctionTypes": true,
-    "skipDefaultLibCheck": true,
-    "strictBindCallApply": true,
-    "moduleResolution": "Node",
-    "noUnusedParameters": true,
-    "noImplicitReturns": true,
-    "resolveJsonModule": true,
-    "listEmittedFiles": true,
-    "strictNullChecks": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "noUnusedLocals": true,
-    "noImplicitThis": true,
-    "importHelpers": true,
-    "noImplicitAny": true,
-    "alwaysStrict": true,
-    "skipLibCheck": true,
-    "diagnostics": true,
-    "target": "ESNext",
-    "module": "ESNext",
-    "sourceMap": true,
-    "pretty": true,
-    "strict": true,
-    "noEmit": true,
-  },
-  "include": [
-    "src"
-  ]
+	"compilerOptions": {
+		"lib": [
+			"ESNext"
+		],
+		"noPropertyAccessFromIndexSignature": true,
+		"useUnknownInCatchVariables": true,
+		"noFallthroughCasesInSwitch": true,
+		"exactOptionalPropertyTypes": true,
+		"noUncheckedIndexedAccess": true,
+		"useDefineForClassFields": true,
+		"strictFunctionTypes": true,
+		"skipDefaultLibCheck": true,
+		"strictBindCallApply": true,
+		"moduleResolution": "Node",
+		"noUnusedParameters": true,
+		"noImplicitReturns": true,
+		"resolveJsonModule": true,
+		"listEmittedFiles": true,
+		"strictNullChecks": true,
+		"isolatedModules": true,
+		"esModuleInterop": true,
+		"noUnusedLocals": true,
+		"noImplicitThis": true,
+		"importHelpers": true,
+		"noImplicitAny": true,
+		"alwaysStrict": true,
+		"skipLibCheck": true,
+		"diagnostics": true,
+		"target": "ESNext",
+		"module": "ESNext",
+		"sourceMap": true,
+		"pretty": true,
+		"strict": true,
+		"noEmit": true
+	},
+	"include": [
+		"src"
+	]
 }
