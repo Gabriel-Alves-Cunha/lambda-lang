@@ -6,8 +6,8 @@ export function guard(fn: Function, args: any[] | IArguments): void {
 }
 
 class Continuation {
-	args: any[];
 	fn: Function;
+	args: any[];
 
 	constructor(fn: Function, args: any[]) {
 		this.args = args;

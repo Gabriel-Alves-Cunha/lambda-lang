@@ -20,6 +20,7 @@
 		"strictNullChecks": true,
 		"isolatedModules": true,
 		"esModuleInterop": true,
+		"removeComments": false,
 		"noUnusedLocals": true,
 		"noImplicitThis": true,
 		"importHelpers": true,
@@ -32,7 +33,7 @@
 		"sourceMap": true,
 		"pretty": true,
 		"strict": true,
-		"noEmit": true
+		"noEmit": true,
 	},
 	"include": [
 		"src"

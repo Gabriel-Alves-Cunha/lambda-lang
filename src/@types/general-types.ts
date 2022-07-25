@@ -82,14 +82,22 @@ export type Identifier =
 
 export type Token = Readonly<
 	// Specifics:
-	| { type: "Punctuation"; value: Punctuation; }
-	| { type: "Identifier"; value: Identifier; }
-	| { type: "VariableName"; value: string; }
-	| { type: "Operator"; value: Operator; }
-	| { type: "Keyword"; value: Keyword; }
-	| { type: "String"; value: string; }
-	| { type: "Number"; value: number; }
+	| { type: typeof punctuation; value: Punctuation; }
+	| { type: typeof identifier; value: Identifier; }
+	| { type: typeof variableName; value: string; }
+	| { type: typeof operator; value: Operator; }
+	| { type: typeof keyword; value: Keyword; }
+	| { type: typeof string; value: string; }
+	| { type: typeof number; value: number; }
 >;
+
+export const variableName = "VariableName";
+export const punctuation = "Punctuation";
+export const identifier = "Identifier";
+export const operator = "Operator";
+export const keyword = "Keyword";
+export const string = "String";
+export const number = "Number";
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////

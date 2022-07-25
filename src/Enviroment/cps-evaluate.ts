@@ -1,34 +1,55 @@
-import { AST, Lambda, VariableDefinition, VariableName } from "../parser";
+import { type Enviroment } from ".";
+
 import { assertUnreachable, stringifyJson } from "../utils/utils";
-import { applyOperand } from "./evaluate";
-import { Enviroment } from ".";
 import { guard } from "./guard";
+import {
+	type Operator,
+	variableName,
+	number,
+	string,
+} from "../@types/general-types";
+import {
+	type VariableDefinition,
+	type VariableName,
+	type Lambda,
+	type AST,
+	variableDefinition,
+	functionCall,
+	boolean,
+	program,
+	assign,
+	binary,
+	lambda,
+	let_,
+	if_,
+} from "../parser";
 
 export function cpsEvaluate(
-	expression: AST,
+	expression: AST | undefined,
 	environment: Enviroment,
 	callback: Function,
 ): void {
 	guard(cpsEvaluate, arguments);
 
-	const { type } = expression;
+	const type = expression?.type;
+	if (!type) return;
 
 	switch (type) {
 		// For constants, we just need to return their value. But
 		// remember, there's no return—instead we're invoking the
 		// callback with the value.
-		case "Number":
-		case "String":
-		case "Boolean":
+		case number:
+		case string:
+		case boolean:
 			callback(expression.value);
 			return;
 
-		case "VariableName":
+		case variableName:
 			// Fetch the variable from the environment, pass it to the callback.
 			callback(environment.get(expression.value));
 			return;
 
-		case "Assign": {
+		case assign: {
 			/** For "assign" nodes we need to evaluate the "right" expression
 			 * first. For this we're calling evaluate, passing a callback that
 			 * will get the result (as right). And then we just invoke our
@@ -36,7 +57,7 @@ export function cpsEvaluate(
 			 * (which will be the value, in fact).
 			 */
 
-			if (expression.left.type !== "VariableName")
+			if (expression.left.type !== variableName)
 				throw new Error(
 					`Cannot assign to expression.left from: ${stringifyJson(expression)}`,
 				);
@@ -48,8 +69,9 @@ export function cpsEvaluate(
 					guard(currentContinuation, arguments);
 
 					callback(environment.set(
-						// expression.left AST of
-						(expression.left as { type: "VariableName"; } & VariableName).value,
+						// `expression.left` is (because of above if guard) an AST of
+						(expression.left as { type: typeof variableName; } & VariableName)
+							.value,
 						right,
 					));
 				},
@@ -58,7 +80,7 @@ export function cpsEvaluate(
 			return;
 		}
 
-		case "Binary": {
+		case binary: {
 			/** Similarly, for "binary" nodes we need to evaluate the "left"
 			 * node, then the "right" node, and then invoke the callback with
 			 * the result of applying the operator. Same as before, we call
@@ -87,7 +109,7 @@ export function cpsEvaluate(
 			return;
 		}
 
-		case "Let": {
+		case let_: {
 			/** "Let" looks a little more complicated, but it's very simple.
 			 * We have a number of variable definitions. Their "def" (initial value)
 			 * can be missing, in which case we make them false by default;
@@ -142,11 +164,11 @@ export function cpsEvaluate(
 			return;
 		}
 
-		case "Lambda":
+		case lambda:
 			callback(makeLambda(environment, expression));
 			return;
 
-		case "If": {
+		case if_: {
 			/** For executing an "if", we evaluate the condition. If
 			 * it's not false then evaluate the "then" branch, otherwise
 			 * evaluate the "else" branch if it's present, otherwise
@@ -179,7 +201,7 @@ export function cpsEvaluate(
 			return;
 		}
 
-		case "Program": {
+		case program: {
 			/** A "Program" node is handled somewhat similar to "Let",
 			 * but it's simpler because it doesn't need to extend
 			 * scope and define variables. Any case, the same general
@@ -213,7 +235,7 @@ export function cpsEvaluate(
 			return;
 		}
 
-		case "FunctionCall": {
+		case functionCall: {
 			/** For a "FunctionCall" node we need to evaluate "fn" and
 			 * then evaluate the arguments, in order. Again, a loop
 			 * function handles them similarly as we needed to do in
@@ -232,8 +254,9 @@ export function cpsEvaluate(
 
 					console.assert(
 						typeof fn === "function" || fn === undefined,
-						"at cpsEvaluate() FunctionCall, fn should be a function, got =",
-						stringifyJson(fn),
+						`[ERROR] At cpsEvaluate() ${functionCall}, fn should be a function, got = ${
+							stringifyJson(fn)
+						}.`,
 					);
 
 					(function loop(
@@ -244,12 +267,6 @@ export function cpsEvaluate(
 
 						const arg = expression.args[index];
 
-						// console.assert(
-						// 	typeof arg === "object",
-						// 	"at cpsEvaluate() FunctionCall->loop, arg should be an AST (object), got =",
-						// 	stringifyJson(arg),
-						// );
-
 						if (index < expression.args.length)
 							cpsEvaluate(
 								arg,
@@ -257,6 +274,7 @@ export function cpsEvaluate(
 								function currentContinuation(arg: AST): void {
 									guard(currentContinuation, arguments);
 
+									// maybe push?
 									args[index + 1] = arg;
 									loop(args, index + 1);
 								},
@@ -269,9 +287,9 @@ export function cpsEvaluate(
 			return;
 		}
 
-		case "VariableDefinition": {
+		case variableDefinition: {
 			throw new Error(
-				`Should not get here at cpsEvaluate() VariableDefinition, got: expression = ${
+				`Should not get here at cpsEvaluate() ${variableDefinition}, got: expression = ${
 					stringifyJson(expression)
 				};\nenviroment = ${stringifyJson(environment)};\ncallback = ${
 					stringifyJson(callback)
@@ -281,6 +299,84 @@ export function cpsEvaluate(
 
 		default:
 			assertUnreachable(type);
+	}
+}
+
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+/////////////////////////////////////////////////
+// Helper functions:
+
+function isNumber(x: unknown): x is number {
+	return typeof x === "number";
+}
+
+function applyOperand(
+	operator: Operator,
+	left: unknown,
+	right: unknown,
+): unknown | number {
+	const num = (x: unknown): number => {
+		if (!isNumber(x))
+			throw new Error(`\
+Expected number, got: ${stringifyJson(x)};
+args = ${stringifyJson(arguments)}.`);
+
+		return x;
+	};
+
+	/////////////////////////////////////////////////
+
+	const div = (x: unknown): number => {
+		if (num(x) === 0) throw new Error("Can't divide by zero");
+
+		return x as number;
+	};
+
+	/////////////////////////////////////////////////
+
+	switch (operator) {
+		case "+":
+			return num(left) + num(right);
+
+		case "-":
+			return num(left) - num(right);
+
+		case "*":
+			return num(left) * num(right);
+
+		case "/":
+			return num(left) / div(right);
+
+		case "%":
+			return num(left) % div(right);
+
+		case "&&":
+			return left !== false && right;
+
+		case "||":
+			return left !== false ? left : right;
+
+		case "<":
+			return num(left) < num(right);
+
+		case ">":
+			return num(left) > num(right);
+
+		case "<=":
+			return num(left) <= num(right);
+
+		case ">=":
+			return num(left) >= num(right);
+
+		case "==":
+			return left === right;
+
+		case "!=":
+			return left !== right;
+
+		default:
+			throw new Error(`Can't apply operator "${operator}".`);
 	}
 }
 
@@ -294,25 +390,26 @@ export function cpsEvaluate(
 function makeLambda(
 	environment: Enviroment,
 	expression:
-		& { type: "Lambda"; }
+		& { type: typeof lambda; }
 		& Lambda, // AST
 ) {
 	console.assert(
-		expression.type === "Lambda",
-		"[ERROR] expression should of type 'Lambda'! got =",
-		stringifyJson(expression),
+		expression.type === lambda,
+		`"[ERROR] expression should be of type ${lambda}"! got = ${
+			stringifyJson(expression)
+		}.`,
 	);
 
 	if (expression.functionName) {
 		environment = environment.extend(expression.functionName);
-		environment.def(expression.functionName, lambda);
+		environment.def(expression.functionName, lambda_);
 	}
 
-	function lambda(callback: Function): void {
-		guard(lambda, arguments);
+	function lambda_(callback: Function): void {
+		guard(lambda_, arguments);
 
 		const names = expression.variables.map(v => v.value);
-		const scope = environment.extend("lambda");
+		const scope = environment.extend(lambda);
 
 		names.forEach((name, index) => {
 			scope.def(
@@ -333,5 +430,5 @@ function makeLambda(
 	 * instead of returning the result.
 	 */
 
-	return lambda;
+	return lambda_;
 }

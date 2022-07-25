@@ -1,16 +1,23 @@
-import { CharStream } from "./char-stream";
+import type { CharStream } from "./char-stream";
+
 import {
+	type Punctuation,
+	type WhiteSpace,
+	type Identifier,
+	type Predicate,
+	type Operator,
+	type Keyword,
+	type Token,
+	type Char,
 	punctuations,
-	Punctuation,
+	variableName,
 	whiteSpaces,
-	WhiteSpace,
+	punctuation,
 	operators,
-	Predicate,
-	Operator,
 	keywords,
-	Keyword,
-	Token,
-	Char,
+	operator,
+	keyword,
+	string,
 } from "../@types/general-types";
 
 const identifiersAllowedFirstLetters = /[a-zλ_]/i;
@@ -37,7 +44,7 @@ export function tokenStream(input: CharStream): TokenStream {
 
 	/////////////////////////////////////////////////
 
-	const readNumber = (): Token => {
+	const readNumber = () => {
 		let hasDot = false;
 
 		const number = readWhile((char: Char): boolean => {
@@ -57,12 +64,12 @@ export function tokenStream(input: CharStream): TokenStream {
 
 	/////////////////////////////////////////////////
 
-	const readIdentifier = (): Token => {
+	const readIdentifier = () => {
 		const identifier = readWhile(isIdentifier);
 
 		const token: Token = isKeyword(identifier) ?
-			{ type: "Keyword", value: identifier as Keyword } :
-			{ type: "VariableName", value: identifier };
+			{ type: keyword, value: identifier as Keyword } :
+			{ type: variableName, value: identifier };
 
 		return token;
 	};
@@ -91,8 +98,8 @@ export function tokenStream(input: CharStream): TokenStream {
 
 	/////////////////////////////////////////////////
 
-	const readString = (): Token => {
-		const token: Token = { type: "String", value: readEscaped("\"") };
+	const readString = () => {
+		const token: Token = { type: string, value: readEscaped("\"") };
 
 		return token;
 	};
@@ -100,7 +107,7 @@ export function tokenStream(input: CharStream): TokenStream {
 	/////////////////////////////////////////////////
 
 	const skipComment = (): void => {
-		readWhile((char: Char) => char !== "\n");
+		readWhile(char => char !== "\n");
 		input.next();
 	};
 
@@ -122,7 +129,7 @@ export function tokenStream(input: CharStream): TokenStream {
 		if (isOneOfIndetifierAllowedFirstLetter(char)) return readIdentifier();
 		if (isPunctuation(char)) {
 			const token: Token = {
-				type: "Punctuation",
+				type: punctuation,
 				value: input.next() as Punctuation,
 			};
 
@@ -130,7 +137,7 @@ export function tokenStream(input: CharStream): TokenStream {
 		}
 		if (isOperator(char)) {
 			const token: Token = {
-				type: "Operator",
+				type: operator,
 				value: readWhile(isOperator) as Operator,
 			};
 
@@ -179,26 +186,27 @@ const isOneOfIndetifierAllowedFirstLetter = (char: Char): boolean =>
 
 /////////////////////////////////////////////////
 
-const isPunctuation = (char: Char): boolean =>
+const isPunctuation = (char: Char): char is Punctuation =>
 	punctuations.includes(char as Punctuation);
 
 /////////////////////////////////////////////////
 
-const isWhitespace = (char: Char): boolean =>
+const isWhitespace = (char: Char): char is WhiteSpace =>
 	whiteSpaces.includes(char as WhiteSpace);
 
 /////////////////////////////////////////////////
 
-const isOperator = (str: string): boolean =>
+const isOperator = (str: string): str is Operator =>
 	operators.includes(str as Operator);
 
 /////////////////////////////////////////////////
 
-const isKeyword = (char: Char): boolean => keywords.includes(char as Keyword);
+const isKeyword = (char: Char): char is Keyword =>
+	keywords.includes(char as Keyword);
 
 /////////////////////////////////////////////////
 
-const isIdentifier = (char: Char): boolean =>
+const isIdentifier = (char: Char): char is Identifier =>
 	isOneOfIndetifierAllowedFirstLetter(char) || identifiers.includes(char);
 
 /////////////////////////////////////////////////

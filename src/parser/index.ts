@@ -1,13 +1,22 @@
-import { Char, Operator, ValueOf } from "../@types/general-types";
-import { dbg, stringifyJson } from "../utils/utils";
-import { TokenStream } from "../token-stream";
+import type { TokenStream } from "../token-stream";
+
+import { stringifyJson } from "../utils/utils";
+import {
+	type Operator,
+	type ValueOf,
+	type Char,
+	variableName,
+	punctuation,
+	operator,
+	keyword,
+	number,
+	string,
+} from "../@types/general-types";
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
 // Constants:
-
-const FALSE: AST = Object.freeze({ type: "Boolean", value: false } as const);
 
 const PRECEDENCE: Readonly<Record<Operator, number>> = Object.freeze(
 	{
@@ -71,7 +80,8 @@ export function parse(input: TokenStream): AST {
 	const isPunctuation = (char: Char) => {
 		const token = input.peek();
 
-		return token && token.type === "Punctuation" &&
+		// TODO
+		return token && token.type === punctuation &&
 				(!char || token.value === char) && token ?
 			token :
 			false;
@@ -79,22 +89,22 @@ export function parse(input: TokenStream): AST {
 
 	/////////////////////////////////////////////////
 
-	const isKeyword = (keyword: string) => {
+	const isKeyword = (keyword_: string) => {
 		const token = input.peek();
 
-		return token && token.type === "Keyword" &&
-				(!keyword || token.value === keyword) && token ?
+		return token && token.type === keyword &&
+				(!keyword_ || token.value === keyword_) && token ?
 			token :
 			false;
 	};
 
 	/////////////////////////////////////////////////
 
-	const isOperator = (operator?: string) => {
+	const isOperator = (operator_?: string) => {
 		const token = input.peek();
 
-		return token && token.type === "Operator" &&
-				(!operator || token.value === operator) ?
+		return token && token.type === operator &&
+				(!operator_ || token.value === operator_) ?
 			token :
 			false;
 	};
@@ -106,21 +116,21 @@ export function parse(input: TokenStream): AST {
 
 	const skipPunctuation = (char: Char): void => {
 		if (isPunctuation(char)) input.next();
-		else input.croak(`Expected punctuation "${char}".`);
+		else input.croak(`${Expected} ${punctuation} "${char}".`);
 	};
 
 	/////////////////////////////////////////////////
 
-	const skipKeyword = (keyword: string): void => {
-		if (isKeyword(keyword)) input.next();
-		else input.croak(`Expected keyword "${keyword}".`);
+	const skipKeyword = (keyword_: string): void => {
+		if (isKeyword(keyword_)) input.next();
+		else input.croak(`${Expected} ${keyword} "${keyword_}".`);
 	};
 
 	/////////////////////////////////////////////////
 
-	const skipOperator = (operator: string): void => {
-		if (isOperator(operator)) input.next();
-		else input.croak(`Expected operator "${operator}".`);
+	const skipOperator = (operator_: string): void => {
+		if (isOperator(operator_)) input.next();
+		else input.croak(`${Expected} ${operator} "${operator_}".`);
 	};
 
 	/////////////////////////////////////////////////
@@ -146,8 +156,10 @@ export function parse(input: TokenStream): AST {
 
 		while (!input.eof()) {
 			if (isPunctuation(stop)) break;
+
 			if (first) first = false;
 			else skipPunctuation(separator);
+
 			if (isPunctuation(stop)) break; // The last separator can be missing.
 
 			result.push(parser());
@@ -177,7 +189,7 @@ export function parse(input: TokenStream): AST {
 	 * comes in handy for reading the argument list.
 	 */
 	const maybeCall = (parseCurrentExpression: () => AST) => {
-		// FunctionBody == AST;
+		// FunctionBody === AST;
 		const functionCallASTOrFunctionBody = parseCurrentExpression();
 
 		return isPunctuation("(") ?
@@ -191,8 +203,8 @@ export function parse(input: TokenStream): AST {
 		left: AST,
 		myPredecence: Precedence,
 	):
-		| Readonly<{ type: "Binary"; } & Binary>
-		| Readonly<{ type: "Assign"; } & Assign>
+		| Readonly<{ type: typeof binary; } & Binary>
+		| Readonly<{ type: typeof assign; } & Assign>
 		| AST => {
 		const token = isOperator();
 
@@ -204,8 +216,8 @@ export function parse(input: TokenStream): AST {
 
 				const right = maybeBinary(parseAtom(), leftPredecence);
 				const ast: AST = token.value === "=" ?
-					{ type: "Assign", operator: token.value, right, left } :
-					{ type: "Binary", operator: token.value, right, left };
+					{ type: assign, operator: token.value, right, left } :
+					{ type: binary, operator: token.value, right, left };
 
 				return maybeBinary(ast, myPredecence);
 			}
@@ -220,17 +232,15 @@ export function parse(input: TokenStream): AST {
 	// Parse functions:
 
 	const parseTopLevel = () => {
-		const program: AST[] = [];
+		const program_: AST[] = [];
 
 		while (!input.eof()) {
-			dbg("program =", stringifyJson(program));
-
-			program.push(parseExpression());
+			program_.push(parseExpression());
 
 			if (!input.eof()) skipPunctuation(";"); // Using this, we demand semicolons between expressions.
 		}
 
-		const ast: AST = { type: "Program", program };
+		const ast: AST = { type: program, program: program_ };
 
 		return ast;
 	};
@@ -240,9 +250,9 @@ export function parse(input: TokenStream): AST {
 	const parseVariableName = () => {
 		const name = input.next();
 
-		if (name?.type !== "VariableName")
+		if (name?.type !== variableName)
 			input.croak(
-				`Expected input of type "Variable name", got input = ${
+				`${Expected} input of type "${variableName}", got input = ${
 					stringifyJson(input)
 				}.`,
 			);
@@ -267,7 +277,7 @@ export function parse(input: TokenStream): AST {
 			else_ = parseExpression();
 		}
 
-		const result: AST = { type: "If", condition, then, else: else_ };
+		const result: AST = { type: if_, condition, then, else: else_ };
 
 		return result;
 	};
@@ -288,7 +298,7 @@ export function parse(input: TokenStream): AST {
 	const parseLet = () => {
 		skipKeyword("let");
 
-		if (input.peek()?.type === "VariableName") {
+		if (input.peek()?.type === variableName) {
 			const functionName = input.next()?.value as string | undefined;
 			const definitions = delimited("(", ")", ",", parseVariablesDefinitions);
 			const variables: VariableName[] = definitions.map(def => ({
@@ -296,13 +306,8 @@ export function parse(input: TokenStream): AST {
 			}));
 
 			const ast: AST = {
-				type: "FunctionCall",
-				fn: {
-					type: "Lambda",
-					functionName,
-					variables,
-					body: parseExpression(),
-				},
+				type: functionCall,
+				fn: { type: lambda, functionName, variables, body: parseExpression() },
 				args: definitions.map(def => def.definition ?? FALSE),
 			};
 
@@ -310,7 +315,7 @@ export function parse(input: TokenStream): AST {
 		}
 
 		const ast: AST = {
-			type: "Let",
+			type: let_,
 			variables: delimited("(", ")", ",", parseVariablesDefinitions),
 			body: parseExpression(),
 		};
@@ -329,7 +334,7 @@ export function parse(input: TokenStream): AST {
 			definition = parseExpression();
 		}
 
-		const ast: AST = { type: "VariableDefinition", name, definition };
+		const ast: AST = { type: variableDefinition, name, definition };
 
 		return ast;
 	};
@@ -337,12 +342,12 @@ export function parse(input: TokenStream): AST {
 	/////////////////////////////////////////////////
 
 	const parseProgram = () => {
-		const program = delimited("{", "}", ";", parseExpression);
+		const program_ = delimited("{", "}", ";", parseExpression);
 
-		if (program.length === 0) return FALSE;
-		if (program.length === 1) return program[0] as AST;
+		if (program_.length === 0) return FALSE;
+		if (program_.length === 1) return program_[0] as AST;
 
-		const ast: AST = { type: "Program", program };
+		const ast: AST = { type: program, program: program_ };
 
 		return ast;
 	};
@@ -351,8 +356,8 @@ export function parse(input: TokenStream): AST {
 
 	const parseLambda = () => {
 		const ast: AST = {
-			type: "Lambda",
-			functionName: input.peek()?.type === "VariableName" ?
+			type: lambda,
+			functionName: input.peek()?.type === variableName ?
 				input.next()?.value as string | undefined :
 				undefined,
 			variables: delimited("(", ")", ",", parseVariableName),
@@ -367,7 +372,7 @@ export function parse(input: TokenStream): AST {
 	const parseFunctionCall = (fn: AST) => {
 		const ast: AST = {
 			args: delimited("(", ")", ",", parseExpression),
-			type: "FunctionCall",
+			type: functionCall,
 			fn,
 		};
 
@@ -377,7 +382,7 @@ export function parse(input: TokenStream): AST {
 	/////////////////////////////////////////////////
 
 	const parseBoolean = () => {
-		const ast: AST = { type: "Boolean", value: input.next()?.value === "true" };
+		const ast: AST = { type: boolean, value: input.next()?.value === "true" };
 
 		return ast;
 	};
@@ -437,9 +442,9 @@ export function parse(input: TokenStream): AST {
 			const token = input.next();
 
 			if (token) {
-				if (token.type === "VariableName" || token.type === "String")
+				if (token.type === variableName || token.type === string)
 					return token;
-				if (token.type === "Number")
+				if (token.type === number)
 					return token;
 			}
 
@@ -460,19 +465,18 @@ export function parse(input: TokenStream): AST {
 // Types:
 
 export type AST = Readonly<
-	| ({ type: "VariableDefinition"; } & VariableDefinition)
-	| ({ type: "FunctionCall"; } & FunctionCall)
-	| ({ type: "VariableName"; } & VariableName)
-	| ({ type: "Boolean"; } & Boolean)
-	| ({ type: "Program"; } & Program)
-	| ({ type: "Lambda"; } & Lambda)
-	| ({ type: "Lambda"; } & Lambda)
-	| ({ type: "Binary"; } & Binary)
-	| ({ type: "Assign"; } & Assign)
-	| ({ type: "Number"; } & Number)
-	| ({ type: "String"; } & String)
-	| ({ type: "Let"; } & Let)
-	| ({ type: "If"; } & If)
+	| ({ type: typeof variableDefinition; } & VariableDefinition)
+	| ({ type: typeof functionCall; } & FunctionCall)
+	| ({ type: typeof variableName; } & VariableName)
+	| ({ type: typeof boolean; } & Boolean)
+	| ({ type: typeof program; } & Program)
+	| ({ type: typeof lambda; } & Lambda)
+	| ({ type: typeof binary; } & Binary)
+	| ({ type: typeof assign; } & Assign)
+	| ({ type: typeof number; } & Number)
+	| ({ type: typeof string; } & String)
+	| ({ type: typeof let_; } & Let)
+	| ({ type: typeof if_; } & If)
 >;
 
 export type Lambda = {
@@ -491,6 +495,21 @@ export type Boolean = { value: true | false; };
 export type VariableName = { value: string; };
 export type Number = { value: number; };
 export type String = { value: string; };
+
+/////////////////////////////////////////////////
+
+export const variableDefinition = "VariableDefinition";
+export const functionCall = "FunctionCall";
+export const boolean = "Boolean";
+export const program = "Program";
+export const lambda = "Lambda";
+export const binary = "Binary";
+export const assign = "Assign";
+export const let_ = "Let";
+export const if_ = "If";
+
+const FALSE: AST = Object.freeze({ type: boolean, value: false } as const);
+export const Expected = "Expected";
 
 /////////////////////////////////////////////////
 

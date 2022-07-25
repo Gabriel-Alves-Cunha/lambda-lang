@@ -53,14 +53,14 @@ export function charStream(input: Readonly<string>): CharStream {
 // Types:
 
 export type CharStream = Readonly<{
+	/** Does `throw new Error(msg)` so that the stream can easily keep track
+	 * of the current location (i.e. line/column), which is important to
+	 * display in the case of an error message. */
+	croak(msg: string): never;
 	/** Returns the next value but without removing it from the stream. */
 	peek(): Char;
 	/** Returns the next value and also discards it from the stream. */
 	next(): Char;
 	/** Returns true if and only if there are no more values in the stream. */
 	eof(): boolean;
-	/** Does `throw new Error(msg)` so that the stream can easily keep track
-	 * of the current location (i.e. line/column), which is important to
-	 * display in the case of an error message. */
-	croak(msg: string): never;
 }>;

@@ -1,7 +1,8 @@
 export type Enviroment = {
-	name: string;
 	parent: Readonly<Enviroment | undefined>;
 	variables: Record<string, unknown>;
+	name: string;
+
 	/** To find the scope where the variable with the given name is defined. */
 	lookup(name: string): Enviroment | undefined;
 	/** To set the value of a variable. This needs to lookup the actual scope
