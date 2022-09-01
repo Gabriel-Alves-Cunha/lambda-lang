@@ -1,14 +1,17 @@
-import type { CharStream } from "./char-stream";
+import type { CharStream } from "./char-stream.js";
+import type {
+	Punctuation,
+	WhiteSpace,
+	Identifier,
+	Predicate,
+	Operator,
+	Keyword,
+	Digit,
+	Token,
+	Char,
+} from "../@types/Tokens.js";
 
 import {
-	type Punctuation,
-	type WhiteSpace,
-	type Identifier,
-	type Predicate,
-	type Operator,
-	type Keyword,
-	type Token,
-	type Char,
 	punctuations,
 	variableName,
 	whiteSpaces,
@@ -18,11 +21,12 @@ import {
 	operator,
 	keyword,
 	string,
-} from "../@types/general-types";
+	digits,
+	number,
+} from "../utils/token-types.js";
 
-const identifiersAllowedFirstLetters = /[a-zλ_]/i;
+const identifiersAllowedAsFirstLetters = /[a-zλ_]/i;
 const identifiers = "?!-<>=0123456789";
-const digit = /[0-9]/i;
 
 export function tokenStream(input: CharStream): TokenStream {
 	/////////////////////////////////////////////////
@@ -34,20 +38,20 @@ export function tokenStream(input: CharStream): TokenStream {
 
 	/////////////////////////////////////////////////
 
-	const readWhile = (predicate: Predicate): string => {
+	function readWhile(predicate: Predicate): string {
 		let str = "";
 
 		while (!input.eof() && predicate(input.peek())) str += input.next();
 
 		return str;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const readNumber = () => {
+	function readNumber() {
 		let hasDot = false;
 
-		const number = readWhile((char: Char): boolean => {
+		const numberAsString = readWhile((char: Char): boolean => {
 			if (char === ".") {
 				if (hasDot) return false;
 				hasDot = true;
@@ -57,14 +61,14 @@ export function tokenStream(input: CharStream): TokenStream {
 			return isDigit(char);
 		});
 
-		const token: Token = { type: "Number", value: Number(number) };
+		const token: Token = { type: number, value: Number(numberAsString) };
 
 		return token;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const readIdentifier = () => {
+	function readIdentifier() {
 		const identifier = readWhile(isIdentifier);
 
 		const token: Token = isKeyword(identifier) ?
@@ -72,11 +76,11 @@ export function tokenStream(input: CharStream): TokenStream {
 			{ type: variableName, value: identifier };
 
 		return token;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const readEscaped = (end: Char): string => {
+	function readEscaped(end: Char): string {
 		let escaped = false, str = "";
 
 		input.next();
@@ -84,36 +88,33 @@ export function tokenStream(input: CharStream): TokenStream {
 		while (!input.eof()) {
 			const char = input.next();
 
-			if (escaped)
-				str += char, escaped = false;
-			else if (char === "\\")
-				escaped = true;
-			else if (char === end)
-				break;
+			if (escaped) (str += char), (escaped = false);
+			else if (char === "\\") escaped = true;
+			else if (char === end) break;
 			else str += char;
 		}
 
 		return str;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const readString = () => {
+	function readString() {
 		const token: Token = { type: string, value: readEscaped("\"") };
 
 		return token;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const skipComment = (): void => {
+	function skipComment(): void {
 		readWhile(char => char !== "\n");
 		input.next();
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const readNext = (): Token | undefined => {
+	function readNext(): Token | undefined {
 		readWhile(isWhitespace);
 
 		if (input.eof()) return undefined;
@@ -126,7 +127,7 @@ export function tokenStream(input: CharStream): TokenStream {
 		}
 		if (char === "\"") return readString();
 		if (isDigit(char)) return readNumber();
-		if (isOneOfIndetifierAllowedFirstLetter(char)) return readIdentifier();
+		if (isOneOfIndetifierAllowedAsFirstLetter(char)) return readIdentifier();
 		if (isPunctuation(char)) {
 			const token: Token = {
 				type: punctuation,
@@ -145,26 +146,30 @@ export function tokenStream(input: CharStream): TokenStream {
 		}
 
 		input.croak(
-			`What is this char "${char}"? I don't know what to do with it!`,
+			`What is this char \`${char}\`? I don't know what to do with it!`,
 		);
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const peek = (): Token | undefined => current ?? (current = readNext());
+	function peek(): Token | undefined {
+		return current ?? (current = readNext());
+	}
 
 	/////////////////////////////////////////////////
 
-	const next = (): Token | undefined => {
+	function next(): Token | undefined {
 		const token = current;
 		current = undefined;
 
 		return token ?? readNext();
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const eof = (): boolean => peek() === undefined;
+	function eof(): boolean {
+		return peek() === undefined;
+	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -181,8 +186,8 @@ export function tokenStream(input: CharStream): TokenStream {
 /////////////////////////////////////////////////
 // Helper functions:
 
-const isOneOfIndetifierAllowedFirstLetter = (char: Char): boolean =>
-	identifiersAllowedFirstLetters.test(char);
+const isOneOfIndetifierAllowedAsFirstLetter = (char: Char): boolean =>
+	identifiersAllowedAsFirstLetters.test(char);
 
 /////////////////////////////////////////////////
 
@@ -207,11 +212,11 @@ const isKeyword = (char: Char): char is Keyword =>
 /////////////////////////////////////////////////
 
 const isIdentifier = (char: Char): char is Identifier =>
-	isOneOfIndetifierAllowedFirstLetter(char) || identifiers.includes(char);
+	isOneOfIndetifierAllowedAsFirstLetter(char) || identifiers.includes(char);
 
 /////////////////////////////////////////////////
 
-const isDigit = (char: Char): boolean => digit.test(char);
+const isDigit = (char: Char): char is Digit => digits.includes(char as Digit);
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////

@@ -1,5 +1,5 @@
 import { performance } from "node:perf_hooks";
-import { debug } from "debug";
+import debug from "debug";
 
 export function assertUnreachable(received: never): never {
 	const error = stringifyJson(received) ?? received;

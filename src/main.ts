@@ -1,12 +1,12 @@
-import { tokenStream } from "./token-stream";
-import { cpsEvaluate } from "./Enviroment/cps-evaluate";
-import { charStream } from "./token-stream/char-stream";
-import { globalEnv } from "./code/global";
-import { Execute } from "./Enviroment/guard";
-import { parse } from "./parser";
-import { time } from "./utils/utils";
+import { tokenStream } from "@token-stream/index.js";
+import { cpsEvaluate } from "./enviroment/cps-evaluate.js";
+import { charStream } from "./token-stream/char-stream.js";
+import { globalEnv } from "./code/global.js";
+import { exec } from "./enviroment/guard.js";
+import { parse } from "./parser/index.js";
+import { time } from "./utils/utils.js";
 
-import { simple } from "./code/fun-tests/simple";
+import { simple } from "./code/fun-tests/simple.js";
 
 ////////////////////////////////////////////////
 ////////////////////////////////////////////////
@@ -18,10 +18,10 @@ const ast = time(
 	"parse code to AST",
 );
 
-// @ts-ignore => we dont need deprecate length:
+// @ts-ignore => we don't need the deprecated length:
 const args: IArguments = [ast, globalEnv, function(result: unknown): void {
 	console.log("Final result =", result);
 }];
 
 // Run the evaluator:
-time(() => Execute(cpsEvaluate, args), "execute all code");
+time(() => exec(cpsEvaluate, args), "execute all code");

@@ -9,10 +9,10 @@
 		"exactOptionalPropertyTypes": true,
 		"noUncheckedIndexedAccess": true,
 		"useDefineForClassFields": true,
+		"moduleResolution": "NodeNext",
 		"strictFunctionTypes": true,
 		"skipDefaultLibCheck": true,
 		"strictBindCallApply": true,
-		"moduleResolution": "Node",
 		"noUnusedParameters": true,
 		"noImplicitReturns": true,
 		"resolveJsonModule": true,
@@ -27,13 +27,31 @@
 		"noImplicitAny": true,
 		"alwaysStrict": true,
 		"skipLibCheck": true,
+		"module": "NodeNext",
 		"diagnostics": true,
 		"target": "ESNext",
-		"module": "ESNext",
 		"sourceMap": true,
+		"baseUrl": "./",
 		"pretty": true,
 		"strict": true,
 		"noEmit": true,
+		"paths": {
+			"@token-stream/*": [
+				"src/token-stream/*"
+			],
+			"@enviroment/*": [
+				"src/enviroment/*"
+			],
+			"@parser/*": [
+				"src/parser/*"
+			],
+			"@utils/*": [
+				"src/utils/*"
+			],
+			"@code/*": [
+				"src/code/*"
+			]
+		}
 	},
 	"include": [
 		"src"

@@ -1,17 +1,16 @@
-import type { TokenStream } from "../token-stream";
+import type { Operator, Char } from "../@types/Tokens.js";
+import type { TokenStream } from "@token-stream/index.js";
+import type { ValueOf } from "../@types/General.js";
 
-import { stringifyJson } from "../utils/utils";
+import { stringifyJson } from "@utils/utils.js";
 import {
-	type Operator,
-	type ValueOf,
-	type Char,
 	variableName,
 	punctuation,
 	operator,
 	keyword,
 	number,
 	string,
-} from "../@types/general-types";
+} from "@utils/token-types.js";
 
 /////////////////////////////////////////////////
 /////////////////////////////////////////////////
@@ -77,78 +76,91 @@ export function parse(input: TokenStream): AST {
 	/////////////////////////////////////////////////
 	// Assertions functions:
 
-	const isPunctuation = (char: Char) => {
+	function isPunctuation(char: Char) {
 		const token = input.peek();
 
 		// TODO
-		return token && token.type === punctuation &&
-				(!char || token.value === char) && token ?
+		return token &&
+				token.type === punctuation &&
+				(!char || token.value === char) &&
+				token ?
 			token :
 			false;
-	};
+		// return token !== undefined &&
+		// 	token.type === punctuation &&
+		// 	(char.length === 0 || token.value === char)
+		// 	? token
+		// 	: false;
+	}
 
 	/////////////////////////////////////////////////
 
-	const isKeyword = (keyword_: string) => {
+	function isKeyword(keyword_: string) {
 		const token = input.peek();
 
-		return token && token.type === keyword &&
-				(!keyword_ || token.value === keyword_) && token ?
+		// TODO
+		return token &&
+				token.type === keyword &&
+				(!keyword_ || token.value === keyword_) &&
+				token ?
 			token :
 			false;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const isOperator = (operator_?: string) => {
+	function isOperator(operator_?: string) {
 		const token = input.peek();
 
-		return token && token.type === operator &&
+		return token &&
+				token.type === operator &&
 				(!operator_ || token.value === operator_) ?
 			token :
 			false;
-	};
+	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	// Skip functions:
 
-	const skipPunctuation = (char: Char): void => {
+	function skipPunctuation(char: Char): void {
 		if (isPunctuation(char)) input.next();
-		else input.croak(`${Expected} ${punctuation} "${char}".`);
-	};
+		else input.croak(`Expected punctuation \`${char}\`.`);
+	}
 
 	/////////////////////////////////////////////////
 
-	const skipKeyword = (keyword_: string): void => {
+	function skipKeyword(keyword_: string): void {
 		if (isKeyword(keyword_)) input.next();
-		else input.croak(`${Expected} ${keyword} "${keyword_}".`);
-	};
+		else input.croak(`Expected keyword \`${keyword_}\`.`);
+	}
 
 	/////////////////////////////////////////////////
 
-	const skipOperator = (operator_: string): void => {
+	// @ts-ignore => Will use it later:
+	function skipOperator(operator_: string): void {
 		if (isOperator(operator_)) input.next();
-		else input.croak(`${Expected} ${operator} "${operator_}".`);
-	};
+		else input.croak(`Expected operator \`${operator_}\`.`);
+	}
 
 	/////////////////////////////////////////////////
 
-	const unexpected = (): never =>
+	function unexpected(): never {
 		input.croak(`Unexpected token: ${stringifyJson(input.peek())}`);
+	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	// Delimiters functions:
 
-	const delimited = <T>(
+	function delimited<T>(
 		start: Char,
 		stop: Char,
 		separator: Char,
 		parser: () => T,
-	): readonly T[] => {
+	): readonly T[] {
 		const result: T[] = [];
 		let first = true;
 
@@ -168,7 +180,7 @@ export function parse(input: TokenStream): AST {
 		skipPunctuation(stop);
 
 		return result;
-	};
+	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -188,27 +200,27 @@ export function parse(input: TokenStream): AST {
 	 * (included below). Notice again how delimited()
 	 * comes in handy for reading the argument list.
 	 */
-	const maybeCall = (parseCurrentExpression: () => AST) => {
+	function maybeCall(parseCurrentExpression: () => AST) {
 		// FunctionBody === AST;
 		const functionCallASTOrFunctionBody = parseCurrentExpression();
 
 		return isPunctuation("(") ?
 			parseFunctionCall(functionCallASTOrFunctionBody) :
 			functionCallASTOrFunctionBody;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const maybeBinary = (
+	function maybeBinary(
 		left: AST,
 		myPredecence: Precedence,
 	):
 		| Readonly<{ type: typeof binary; } & Binary>
 		| Readonly<{ type: typeof assign; } & Assign>
-		| AST => {
+		| AST {
 		const token = isOperator();
 
-		if (token) {
+		if (token !== false) {
 			const leftPredecence = PRECEDENCE[token.value];
 
 			if (leftPredecence > myPredecence) {
@@ -224,14 +236,14 @@ export function parse(input: TokenStream): AST {
 		}
 
 		return left;
-	};
+	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	// Parse functions:
 
-	const parseTopLevel = () => {
+	function parseTopLevel() {
 		const program_: AST[] = [];
 
 		while (!input.eof()) {
@@ -243,31 +255,31 @@ export function parse(input: TokenStream): AST {
 		const ast: AST = { type: program, program: program_ };
 
 		return ast;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseVariableName = () => {
+	function parseVariableName() {
 		const name = input.next();
 
 		if (name?.type !== variableName)
 			input.croak(
-				`${Expected} input of type "${variableName}", got input = ${
+				`Expected input of type \`${variableName}\`, got = ${
 					stringifyJson(input)
 				}.`,
 			);
 
 		return name;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseIf = () => {
+	function parseIf() {
 		skipKeyword("if");
 
 		const condition = parseExpression();
 
-		if (!isPunctuation("{")) skipKeyword("then");
+		if (isPunctuation("{") === false) skipKeyword("then");
 
 		const then = parseExpression();
 
@@ -280,7 +292,7 @@ export function parse(input: TokenStream): AST {
 		const result: AST = { type: if_, condition, then, else: else_ };
 
 		return result;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
@@ -295,7 +307,7 @@ export function parse(input: TokenStream): AST {
 	 * the body of the function is, of course, fetched with
 	 * parse_expression().
 	 */
-	const parseLet = () => {
+	function parseLet() {
 		skipKeyword("let");
 
 		if (input.peek()?.type === variableName) {
@@ -321,11 +333,11 @@ export function parse(input: TokenStream): AST {
 		};
 
 		return ast;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseVariablesDefinitions = () => {
+	function parseVariablesDefinitions() {
 		const { value: name } = parseVariableName();
 		let definition: AST | undefined;
 
@@ -337,11 +349,11 @@ export function parse(input: TokenStream): AST {
 		const ast: AST = { type: variableDefinition, name, definition };
 
 		return ast;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseProgram = () => {
+	function parseProgram() {
 		const program_ = delimited("{", "}", ";", parseExpression);
 
 		if (program_.length === 0) return FALSE;
@@ -350,26 +362,26 @@ export function parse(input: TokenStream): AST {
 		const ast: AST = { type: program, program: program_ };
 
 		return ast;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseLambda = () => {
+	function parseLambda() {
 		const ast: AST = {
 			type: lambda,
 			functionName: input.peek()?.type === variableName ?
-				input.next()?.value as string | undefined :
+				(input.next()?.value as string | undefined) :
 				undefined,
 			variables: delimited("(", ")", ",", parseVariableName),
 			body: parseExpression(),
 		};
 
 		return ast;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseFunctionCall = (fn: AST) => {
+	function parseFunctionCall(fn: AST) {
 		const ast: AST = {
 			args: delimited("(", ")", ",", parseExpression),
 			type: functionCall,
@@ -377,21 +389,21 @@ export function parse(input: TokenStream): AST {
 		};
 
 		return ast;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseBoolean = () => {
+	function parseBoolean() {
 		const ast: AST = { type: boolean, value: input.next()?.value === "true" };
 
 		return ast;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const parseExpression = (): AST =>
-		maybeCall(() => maybeBinary(parseAtom(), 0));
-
+	function parseExpression(): AST {
+		return maybeCall(() => maybeBinary(parseAtom(), 0));
+	}
 	/////////////////////////////////////////////////
 
 	/**
@@ -404,8 +416,8 @@ export function parse(input: TokenStream): AST {
 	 * identifier, it's just returned as is. And if nothing works,
 	 * unexpected() will throw an error.
 	 */
-	const parseAtom = () =>
-		maybeCall((): AST => {
+	function parseAtom() {
+		return maybeCall((): AST => {
 			if (isPunctuation("(")) {
 				input.next();
 
@@ -441,16 +453,14 @@ export function parse(input: TokenStream): AST {
 
 			const token = input.next();
 
-			if (token) {
-				if (token.type === variableName || token.type === string)
-					return token;
-				if (token.type === number)
-					return token;
+			if (token !== undefined) {
+				if (token.type === variableName || token.type === string) return token;
+				if (token.type === number) return token;
 			}
 
-			return unexpected();
+			unexpected();
 		});
-
+	}
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -509,8 +519,8 @@ export const let_ = "Let";
 export const if_ = "If";
 
 const FALSE: AST = Object.freeze({ type: boolean, value: false } as const);
-export const Expected = "Expected";
 
 /////////////////////////////////////////////////
 
+// TODO:
 type Precedence = ValueOf<typeof PRECEDENCE> | number;

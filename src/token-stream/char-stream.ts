@@ -1,6 +1,6 @@
-import type { Char } from "../@types/general-types";
+import type { Char } from "../@types/Tokens.js";
 
-export function charStream(input: Readonly<string>): CharStream {
+export function charStream(input: Char): CharStream {
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -13,29 +13,33 @@ export function charStream(input: Readonly<string>): CharStream {
 	/////////////////////////////////////////////////
 	// Functions:
 
-	const next = (): Char => {
-		// Get current char and increment pos:
+	function next(): Char {
+		// Get current char and increment position:
 		const char = input.charAt(pos++);
 
-		if (char === "\n") ++line, column = 0;
+		if (char === "\n") ++line, (column = 0);
 		else ++column;
 
 		return char;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const peek = (): Char => input.charAt(pos);
+	function peek(): Char {
+		return input.charAt(pos);
+	}
 
 	/////////////////////////////////////////////////
 
-	const eof = (): boolean => peek() === "";
+	function eof(): boolean {
+		return peek() === "";
+	}
 
 	/////////////////////////////////////////////////
 
-	const croak = (msg: string): never => {
+	function croak(msg: string): never {
 		throw new Error(`${msg} (at line: ${line}, column: ${column}).`);
-	};
+	}
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
@@ -57,10 +61,10 @@ export type CharStream = Readonly<{
 	 * of the current location (i.e. line/column), which is important to
 	 * display in the case of an error message. */
 	croak(msg: string): never;
+	/** Returns true if and only if there are no more values in the stream. */
+	eof(): boolean;
 	/** Returns the next value but without removing it from the stream. */
 	peek(): Char;
 	/** Returns the next value and also discards it from the stream. */
 	next(): Char;
-	/** Returns true if and only if there are no more values in the stream. */
-	eof(): boolean;
 }>;

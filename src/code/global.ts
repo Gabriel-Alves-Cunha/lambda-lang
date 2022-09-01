@@ -1,9 +1,9 @@
-import { readFile, writeFile } from "fs";
+import { readFile, writeFile } from "node:fs";
 import { performance } from "node:perf_hooks";
 
-import { makeEnviroment } from "../Enviroment";
-import { Execute } from "../Enviroment/guard";
-import { dbg } from "../utils/utils";
+import { makeEnviroment } from "@enviroment/index.js";
+import { exec } from "@enviroment/guard.js";
+import { dbg } from "@utils/utils.js";
 
 // Create the global environment:
 export const globalEnv = makeEnviroment("global");
@@ -12,7 +12,7 @@ export const globalEnv = makeEnviroment("global");
 
 globalEnv.def(
 	"time",
-	function(callback: Function, func: Function, label: string): void {
+	function time(callback: Function, func: Function, label: string): void {
 		const start = performance.now();
 		func(function(ret: any) {
 			const time = performance.now() - start;
@@ -32,7 +32,7 @@ globalEnv.def(
 ////////////////////////////////////////////////
 
 // define the "log" primitive function
-globalEnv.def("log", function(callback: Function, ...args: any[]) {
+globalEnv.def("log", function log(callback: Function, ...args: any[]) {
 	console.log(...args);
 	callback(false); // call the continuation with some return value
 	// if we don't call it, the program would stop
@@ -41,7 +41,7 @@ globalEnv.def("log", function(callback: Function, ...args: any[]) {
 ////////////////////////////////////////////////
 
 // define the "print" primitive function
-globalEnv.def("print", function(callback: Function, ...args: any[]) {
+globalEnv.def("print", function print(callback: Function, ...args: any[]) {
 	args.forEach(arg => process.stdout.write(String(arg)));
 	callback(false); // call the continuation with some return value
 	// if we don't call it, the program would stop
@@ -50,49 +50,59 @@ globalEnv.def("print", function(callback: Function, ...args: any[]) {
 
 ////////////////////////////////////////////////
 
-globalEnv.def("halt", function(_callback: Function): void {});
+globalEnv.def("halt", function halt(_callback: Function): void {});
 
 ////////////////////////////////////////////////
 
 globalEnv.def(
 	"sleep",
-	function(callback: Function, milliseconds: number): void {
+	function sleep(callback: Function, milliseconds: number): void {
 		setTimeout(function(): void {
-			Execute(callback, [false]);
+			exec(callback, [false]);
 		}, milliseconds);
 	},
 );
 
 ////////////////////////////////////////////////
 
-globalEnv.def("readFile", function(callback: Function, filename: string): void {
-	readFile(filename, function(err, data): void {
-		if (err) throw err;
-
-		// error handling is a bit more complex, ignoring for now
-		Execute(callback, [data]); // hope it's clear why we need the Execute
-	});
-});
-
-////////////////////////////////////////////////
-
 globalEnv.def(
-	"writeFile",
-	function(callback: Function, filename: string, data: Buffer): void {
-		writeFile(filename, data, function(err): void {
+	"readFile",
+	function readFile_(callback: Function, filename: string): void {
+		readFile(filename, function(err, data): void {
 			if (err) throw err;
 
-			Execute(callback, [false]);
+			// error handling is a bit more complex, ignoring for now
+			exec(callback, [data]); // hope it's clear why we need the Execute
 		});
 	},
 );
 
 ////////////////////////////////////////////////
 
-globalEnv.def("twice", function(callback: Function, a: unknown, b: unknown) {
-	callback(a);
-	callback(b);
-});
+globalEnv.def(
+	"writeFile",
+	function writeFile_(
+		callback: Function,
+		filename: string,
+		data: Buffer,
+	): void {
+		writeFile(filename, data, function(err): void {
+			if (err) throw err;
+
+			exec(callback, [false]);
+		});
+	},
+);
+
+////////////////////////////////////////////////
+
+globalEnv.def(
+	"twice",
+	function twice(callback: Function, a: unknown, b: unknown) {
+		callback(a);
+		callback(b);
+	},
+);
 
 ////////////////////////////////////////////////
 
@@ -115,7 +125,7 @@ globalEnv.def(
 	 * that were previously unthinkable, from exceptions to
 	 * return. Let's start with the latter.
 	 */
-	function(callback: Function, fn: Function): void {
+	function callWitCurrentContinuation(callback: Function, fn: Function): void {
 		fn(
 			callback,
 			function currentContinuation(_discarded: Function, ret: unknown): void {

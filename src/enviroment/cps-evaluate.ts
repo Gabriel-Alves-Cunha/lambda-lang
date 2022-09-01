@@ -1,13 +1,9 @@
-import { type Enviroment } from ".";
+import type { Enviroment } from "./index.js";
+import type { Operator } from "../@types/Tokens.js";
 
-import { assertUnreachable, stringifyJson } from "../utils/utils";
-import { guard } from "./guard";
-import {
-	type Operator,
-	variableName,
-	number,
-	string,
-} from "../@types/general-types";
+import { assertUnreachable, stringifyJson } from "@utils/utils.js";
+import { variableName, number, string } from "@utils/token-types.js";
+import { guard } from "./guard.js";
 import {
 	type VariableDefinition,
 	type VariableName,
@@ -22,7 +18,7 @@ import {
 	lambda,
 	let_,
 	if_,
-} from "../parser";
+} from "@parser/index.js";
 
 export function cpsEvaluate(
 	expression: AST | undefined,
@@ -32,7 +28,7 @@ export function cpsEvaluate(
 	guard(cpsEvaluate, arguments);
 
 	const type = expression?.type;
-	if (!type) return;
+	if (type === undefined) return;
 
 	switch (type) {
 		// For constants, we just need to return their value. But
@@ -59,7 +55,9 @@ export function cpsEvaluate(
 
 			if (expression.left.type !== variableName)
 				throw new Error(
-					`Cannot assign to expression.left from: ${stringifyJson(expression)}`,
+					`Cannot assign to 'expression.left' from: ${
+						stringifyJson(expression)
+					}`,
 				);
 
 			cpsEvaluate(
@@ -139,7 +137,7 @@ export function cpsEvaluate(
 				if (index < expression.variables.length) {
 					const variable = expression.variables[index] as VariableDefinition;
 
-					if (variable.definition)
+					if (variable.definition !== undefined)
 						cpsEvaluate(
 							variable.definition,
 							environment,
@@ -184,16 +182,10 @@ export function cpsEvaluate(
 				function currentContinuation(condition: AST | false): void {
 					guard(currentContinuation, arguments);
 
-					if (condition !== false) cpsEvaluate(
-							expression.then,
-							environment,
-							callback,
-						);
-					else if (expression.else) cpsEvaluate(
-							expression.else,
-							environment,
-							callback,
-						);
+					if (condition !== false)
+						cpsEvaluate(expression.then, environment, callback);
+					else if (expression.else !== undefined)
+						cpsEvaluate(expression.else, environment, callback);
 					else callback(false);
 				},
 			);
@@ -254,7 +246,7 @@ export function cpsEvaluate(
 
 					console.assert(
 						typeof fn === "function" || fn === undefined,
-						`[ERROR] At cpsEvaluate() ${functionCall}, fn should be a function, got = ${
+						`[ERROR] At cpsEvaluate() FunctionCall, fn should be a function, got = ${
 							stringifyJson(fn)
 						}.`,
 					);
@@ -289,7 +281,7 @@ export function cpsEvaluate(
 
 		case variableDefinition: {
 			throw new Error(
-				`Should not get here at cpsEvaluate() ${variableDefinition}, got: expression = ${
+				`Should not get here at 'cpsEvaluate() variable definition', got expression = ${
 					stringifyJson(expression)
 				};\nenviroment = ${stringifyJson(environment)};\ncallback = ${
 					stringifyJson(callback)
@@ -316,22 +308,24 @@ function applyOperand(
 	left: unknown,
 	right: unknown,
 ): unknown | number {
-	const num = (x: unknown): number => {
+	function num(x: unknown): number {
 		if (!isNumber(x))
-			throw new Error(`\
-Expected number, got: ${stringifyJson(x)};
-args = ${stringifyJson(arguments)}.`);
+			throw new Error(
+				`Expected number, got: ${stringifyJson(x)};\nargs = ${
+					stringifyJson(arguments)
+				}.`,
+			);
 
 		return x;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
-	const div = (x: unknown): number => {
+	function div(x: unknown): number {
 		if (num(x) === 0) throw new Error("Can't divide by zero");
 
 		return x as number;
-	};
+	}
 
 	/////////////////////////////////////////////////
 
@@ -376,7 +370,7 @@ args = ${stringifyJson(arguments)}.`);
 			return left !== right;
 
 		default:
-			throw new Error(`Can't apply operator "${operator}".`);
+			throw new Error(`Can't apply operator \`${operator}\`.`);
 	}
 }
 
@@ -395,12 +389,12 @@ function makeLambda(
 ) {
 	console.assert(
 		expression.type === lambda,
-		`"[ERROR] expression should be of type ${lambda}"! got = ${
+		`"[ERROR] 'expression' should be of type Lambda! got = ${
 			stringifyJson(expression)
 		}.`,
 	);
 
-	if (expression.functionName) {
+	if (expression.functionName !== undefined) {
 		environment = environment.extend(expression.functionName);
 		environment.def(expression.functionName, lambda_);
 	}

@@ -1,4 +1,4 @@
-import { throwAndCatch } from "../internal/throw-catch";
+import { throwAndCatch } from "../internal/throw-catch.js";
 
 export const simple = throwAndCatch + `
 # log_range = λ(a, b) if a <= b {
