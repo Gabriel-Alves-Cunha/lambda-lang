@@ -1,12 +1,9 @@
 import { readFile, writeFile } from "node:fs";
 import { performance } from "node:perf_hooks";
 
-import { makeEnviroment } from "@enviroment/index.js";
+import { globalEnv } from "./globalEnv.js";
 import { exec } from "@enviroment/guard.js";
 import { dbg } from "@utils/utils.js";
-
-// Create the global environment:
-export const globalEnv = makeEnviroment("global");
 
 ////////////////////////////////////////////////
 
@@ -14,19 +11,19 @@ globalEnv.def(
 	"time",
 	function time(callback: Function, func: Function, label: string): void {
 		const start = performance.now();
-		func(function(ret: any) {
+		func(function (ret: any) {
 			const time = performance.now() - start;
 
 			dbg(
 				`%cFunction %c"${label}" %ctook: ${time} ms.`,
 				"color:brown",
 				"color:blue",
-				"color:brown",
+				"color:brown"
 			);
 
 			callback(ret);
 		});
-	},
+	}
 );
 
 ////////////////////////////////////////////////
@@ -57,10 +54,10 @@ globalEnv.def("halt", function halt(_callback: Function): void {});
 globalEnv.def(
 	"sleep",
 	function sleep(callback: Function, milliseconds: number): void {
-		setTimeout(function(): void {
+		setTimeout(function (): void {
 			exec(callback, [false]);
 		}, milliseconds);
-	},
+	}
 );
 
 ////////////////////////////////////////////////
@@ -68,13 +65,13 @@ globalEnv.def(
 globalEnv.def(
 	"readFile",
 	function readFile_(callback: Function, filename: string): void {
-		readFile(filename, function(err, data): void {
+		readFile(filename, function (err, data): void {
 			if (err) throw err;
 
 			// error handling is a bit more complex, ignoring for now
 			exec(callback, [data]); // hope it's clear why we need the Execute
 		});
-	},
+	}
 );
 
 ////////////////////////////////////////////////
@@ -84,14 +81,14 @@ globalEnv.def(
 	function writeFile_(
 		callback: Function,
 		filename: string,
-		data: Buffer,
+		data: Buffer
 	): void {
-		writeFile(filename, data, function(err): void {
+		writeFile(filename, data, function (err): void {
 			if (err) throw err;
 
 			exec(callback, [false]);
 		});
-	},
+	}
 );
 
 ////////////////////////////////////////////////
@@ -101,7 +98,7 @@ globalEnv.def(
 	function twice(callback: Function, a: unknown, b: unknown) {
 		callback(a);
 		callback(b);
-	},
+	}
 );
 
 ////////////////////////////////////////////////
@@ -130,9 +127,9 @@ globalEnv.def(
 			callback,
 			function currentContinuation(_discarded: Function, ret: unknown): void {
 				callback(ret);
-			},
+			}
 		);
-	},
+	}
 );
 
 ////////////////////////////////////////////////
