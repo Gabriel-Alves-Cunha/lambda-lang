@@ -5,9 +5,9 @@ export function guard(fn: Function, args: unknown[] | IArguments): void {
 	if (--STACK_LENGHT < 0) throw new Continuation(fn, args);
 }
 
-class Continuation {
-	fn: Function;
+export class Continuation {
 	args: unknown[];
+	fn: Function;
 
 	constructor(fn: Function, args: unknown[]) {
 		this.args = args;
@@ -31,8 +31,9 @@ export function exec(fn: Function, args: unknown[] | IArguments) {
 
 			return fn.apply(null, args);
 		} catch (exception) {
-			if (exception instanceof Continuation)
-				(fn = exception.fn), (args = exception.args);
-			else throw exception;
+			if (exception instanceof Continuation) {
+				args = exception.args;
+				fn = exception.fn;
+			} else throw exception;
 		}
 }

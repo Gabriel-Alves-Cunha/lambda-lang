@@ -1,14 +1,16 @@
 import type { Enviroment } from "./index.js";
 import type { Operator } from "../@types/Tokens.js";
+import type {
+	VariableDefinition,
+	VariableName_AST,
+	Lambda_AST,
+	AST,
+} from "../@types/AST.js";
 
 import { assertUnreachable, stringifyJson } from "@utils/utils.js";
 import { variableName, number, string } from "@utils/token-types.js";
 import { guard } from "./guard.js";
 import {
-	type VariableDefinition,
-	type VariableName,
-	type Lambda,
-	type AST,
 	variableDefinition,
 	functionCall,
 	boolean,
@@ -23,7 +25,7 @@ import {
 export function cpsEvaluate(
 	expression: AST | undefined,
 	environment: Enviroment,
-	callback: Function,
+	callback: Function
 ): void {
 	guard(cpsEvaluate, arguments);
 
@@ -42,7 +44,7 @@ export function cpsEvaluate(
 
 		case variableName:
 			// Fetch the variable from the environment, pass it to the callback.
-			callback(environment.get(expression.value));
+			callback(environment.get(expression.name));
 			return;
 
 		case assign: {
@@ -55,9 +57,9 @@ export function cpsEvaluate(
 
 			if (expression.left.type !== variableName)
 				throw new Error(
-					`Cannot assign to 'expression.left' from: ${
-						stringifyJson(expression)
-					}`,
+					`Cannot assign to 'expression.left' from: ${stringifyJson(
+						expression
+					)}`
 				);
 
 			cpsEvaluate(
@@ -66,13 +68,14 @@ export function cpsEvaluate(
 				function currentContinuation(right: AST): void {
 					guard(currentContinuation, arguments);
 
-					callback(environment.set(
-						// `expression.left` is (because of above if guard) an AST of
-						(expression.left as { type: typeof variableName; } & VariableName)
-							.value,
-						right,
-					));
-				},
+					callback(
+						environment.set(
+							// `expression.left` is (because of above if guard) an AST of
+							(expression.left as VariableName_AST).name,
+							right
+						)
+					);
+				}
 			);
 
 			return;
@@ -99,9 +102,9 @@ export function cpsEvaluate(
 							guard(currentContinuation, arguments);
 
 							callback(applyOperand(expression.operator, left, right));
-						},
+						}
 					);
-				},
+				}
 			);
 
 			return;
@@ -148,7 +151,7 @@ export function cpsEvaluate(
 								scope.def(variable.name, value);
 
 								loop(scope, index + 1);
-							},
+							}
 						);
 					else {
 						const scope = environment.extend(variable.name);
@@ -187,7 +190,7 @@ export function cpsEvaluate(
 					else if (expression.else !== undefined)
 						cpsEvaluate(expression.else, environment, callback);
 					else callback(false);
-				},
+				}
 			);
 
 			return;
@@ -219,7 +222,7 @@ export function cpsEvaluate(
 							guard(currentContinuation, arguments);
 
 							loop(value, index + 1);
-						},
+						}
 					);
 				else callback(last);
 			})(false, 0);
@@ -246,14 +249,14 @@ export function cpsEvaluate(
 
 					console.assert(
 						typeof fn === "function" || fn === undefined,
-						`[ERROR] At cpsEvaluate() FunctionCall, fn should be a function, got = ${
-							stringifyJson(fn)
-						}.`,
+						`[ERROR] At cpsEvaluate() FunctionCall, fn should be a function, got = ${stringifyJson(
+							fn
+						)}.`
 					);
 
 					(function loop(
 						args: [callback: Function, ...asts: AST[]],
-						index,
+						index
 					): void {
 						guard(loop, arguments);
 
@@ -269,11 +272,11 @@ export function cpsEvaluate(
 									// maybe push?
 									args[index + 1] = arg;
 									loop(args, index + 1);
-								},
+								}
 							);
 						else fn?.apply(null, args);
 					})([callback], 0);
-				},
+				}
 			);
 
 			return;
@@ -281,11 +284,11 @@ export function cpsEvaluate(
 
 		case variableDefinition: {
 			throw new Error(
-				`Should not get here at 'cpsEvaluate() variable definition', got expression = ${
-					stringifyJson(expression)
-				};\nenviroment = ${stringifyJson(environment)};\ncallback = ${
-					stringifyJson(callback)
-				}`,
+				`Should not get here at 'cpsEvaluate() variable definition', got expression = ${stringifyJson(
+					expression
+				)};\nenviroment = ${stringifyJson(
+					environment
+				)};\ncallback = ${stringifyJson(callback)}`
 			);
 		}
 
@@ -306,14 +309,14 @@ function isNumber(x: unknown): x is number {
 function applyOperand(
 	operator: Operator,
 	left: unknown,
-	right: unknown,
+	right: unknown
 ): unknown | number {
 	function num(x: unknown): number {
 		if (!isNumber(x))
 			throw new Error(
-				`Expected number, got: ${stringifyJson(x)};\nargs = ${
-					stringifyJson(arguments)
-				}.`,
+				`Expected number, got: ${stringifyJson(x)};\nargs = ${stringifyJson(
+					arguments
+				)}.`
 			);
 
 		return x;
@@ -370,7 +373,7 @@ function applyOperand(
 			return left !== right;
 
 		default:
-			throw new Error(`Can't apply operator \`${operator}\`.`);
+			throw new Error(`Can't apply operator \`${operator}\`!`);
 	}
 }
 
@@ -381,17 +384,12 @@ function applyOperand(
  * one is always inserted by the evaluator. Here's the
  * code for the new make_lambda:
  */
-function makeLambda(
-	environment: Enviroment,
-	expression:
-		& { type: typeof lambda; }
-		& Lambda, // AST
-) {
+function makeLambda(environment: Enviroment, expression: Lambda_AST) {
 	console.assert(
 		expression.type === lambda,
-		`"[ERROR] 'expression' should be of type Lambda! got = ${
-			stringifyJson(expression)
-		}.`,
+		`"[ERROR] 'expression' should be of type Lambda! Got: \`${stringifyJson(
+			expression
+		)}\`.`
 	);
 
 	if (expression.functionName !== undefined) {
@@ -402,13 +400,13 @@ function makeLambda(
 	function lambda_(callback: Function): void {
 		guard(lambda_, arguments);
 
-		const names = expression.variables.map(v => v.value);
+		const names = expression.variables.map(v => v.name);
 		const scope = environment.extend(lambda);
 
 		names.forEach((name, index) => {
 			scope.def(
 				name,
-				index + 1 < arguments.length ? arguments[index + 1] : false,
+				index + 1 < arguments.length ? arguments[index + 1] : false
 			);
 		});
 

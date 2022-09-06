@@ -36,6 +36,9 @@
 		"strict": true,
 		"noEmit": true,
 		"paths": {
+			"@js-code-gen/*": [
+				"src/js-code-gen/*"
+			],
 			"@token-stream/*": [
 				"src/token-stream/*"
 			],

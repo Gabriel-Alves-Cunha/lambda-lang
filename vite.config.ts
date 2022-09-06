@@ -70,6 +70,10 @@ export default defineConfig(({ mode }) => {
 					find: "@enviroment",
 					replacement: resolve(__dirname, "src/enviroment"),
 				},
+				{
+					find: "@js-code-gen",
+					replacement: resolve(__dirname, "src/js-code-gen"),
+				},
 				{ find: "@parser", replacement: resolve(__dirname, "src/parser") },
 				{ find: "@utils", replacement: resolve(__dirname, "src/utils") },
 				{ find: "@code", replacement: resolve(__dirname, "src/code") },

@@ -49,8 +49,8 @@ export type Operator = typeof operators[number];
 export type Keyword = typeof keywords[number];
 export type Digit = typeof digits[number];
 export type Identifier =
-	| Lowercase<Letter>
 	| Uppercase<Letter>
+	| Letter // Lowercase
 	| "λ"
 	| "_"
 	| "?"
@@ -62,15 +62,33 @@ export type Identifier =
 
 /////////////////////////////////////////////////
 
-export type Token = Readonly<
-	| { type: typeof punctuation; value: Punctuation; }
-	| { type: typeof identifier; value: Identifier; }
-	| { type: typeof variableName; value: string; }
-	| { type: typeof operator; value: Operator; }
-	| { type: typeof keyword; value: Keyword; }
-	| { type: typeof string; value: string; }
-	| { type: typeof number; value: number; }
->;
+export type Token =
+	| VariableName_Token
+	| Punctuation_Token
+	| Identifier_Token
+	| Operator_Token
+	| Keyword_Token
+	| String_Token
+	| Number_Token;
+
+export type NarrowedToken<Type, Value> = Readonly<{
+	value: Value;
+	type: Type;
+}>;
+
+export type Punctuation_Token = NarrowedToken<typeof punctuation, Punctuation>;
+
+export type Identifier_Token = NarrowedToken<typeof identifier, Identifier>;
+
+export type VariableName_Token = NarrowedToken<typeof variableName, string>;
+
+export type Operator_Token = NarrowedToken<typeof operator, Operator>;
+
+export type Keyword_Token = NarrowedToken<typeof keyword, Keyword>;
+
+export type String_Token = NarrowedToken<typeof string, string>;
+
+export type Number_Token = NarrowedToken<typeof number, number>;
 
 /////////////////////////////////////////////////
 

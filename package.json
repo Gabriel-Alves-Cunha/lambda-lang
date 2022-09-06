@@ -7,19 +7,22 @@
 	"license": "MIT",
 	"private": true,
 	"scripts": {
+		"cps:js": "cross-env DEBUG=lambda:debug vite-node src/code/native-js/continuationStyle.ts --watch",
+		"native:js": "cross-env DEBUG=lambda:debug vite-node src/code/native-js/index.ts --watch",
 		"dev": "cross-env DEBUG=lambda:debug vite-node src/main.ts --watch",
 		"ts:check": "tsc --noEmit --pretty --extendedDiagnostics",
-		"term": "vite-node src/main.ts",
+		"term": "cross-env DEBUG=lambda:debug vite-node src/main.ts",
 		"build": "vite build",
 		"fmt": "dprint fmt"
 	},
 	"devDependencies": {
-		"@types/debug": "^4.1.7",
-		"@types/node": "^18.7.14",
+		"@types/node": "^18.7.15",
+		"@types/uglify-js": "^3.17.0",
 		"cross-env": "^7.0.3",
 		"dprint": "^0.31.1",
 		"typescript": "^4.8.2",
-		"vite-node": "^0.22.1",
-		"vite": "^3.0.9"
+		"uglify-js": "^3.17.0",
+		"vite": "^3.1.0",
+		"vite-node": "^0.23.1"
 	}
 }

@@ -1,6 +1,6 @@
 export function makeEnviroment(
 	name = "anonymous lambda",
-	parent?: Enviroment,
+	parent?: Enviroment
 ): Enviroment {
 	const env: Enviroment = {
 		variables: Object.create(parent ? parent.variables : null),
@@ -63,9 +63,9 @@ export function makeEnviroment(
 // Types:
 
 export type Enviroment = {
-	parent: Readonly<Enviroment | undefined>;
+	readonly parent: Readonly<Enviroment | undefined>;
 	variables: Record<string, unknown>;
-	name: string;
+	readonly name: string;
 
 	/** To find the scope where the variable with the given name is defined. */
 	lookup(name: string): Enviroment | undefined;

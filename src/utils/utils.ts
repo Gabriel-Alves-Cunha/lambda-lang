@@ -1,11 +1,10 @@
 import { performance } from "node:perf_hooks";
-import debug from "debug";
 
 export function assertUnreachable(received: never): never {
 	const error = stringifyJson(received) ?? received;
 
 	throw new Error(
-		"I shouldn't get here (on 'assertUnreachable')!\nreceived = " + error,
+		"I shouldn't get here (on 'assertUnreachable')!\nreceived = " + error
 	);
 }
 
@@ -22,7 +21,7 @@ export function time<T>(fn: () => T, label: string): T {
 		`%cFunction %c"${label}" %ctook: ${end - start} ms.`,
 		"color:brown",
 		"color:blue",
-		"color:brown",
+		"color:brown"
 	);
 
 	return fnReturn as T;
@@ -34,12 +33,51 @@ export function stringifyJson(obj: unknown): string | undefined {
 	return JSON.stringify(
 		typeof obj === "function" ? obj.toString() : obj,
 		null,
-		2,
+		2
 	);
 }
 
 /////////////////////////////////////////////////
+/////////////////////////////////////////////////
 
-export const dbg = debug("lambda:debug");
+const logParsingToNativeJS =
+	// @ts-ignore => This has to be by dot notation:
+	process.env.DEBUG?.includes("lambda:parse-js") ?? false;
+// @ts-ignore => This has to be by dot notation:
+const logDebug = process.env.DEBUG?.includes("lambda:debug") ?? false;
+// @ts-ignore => This has to be by dot notation:
+const logCps = process.env.DEBUG?.includes("lambda:cps") ?? false;
 
-dbg("Hello to the debug side!");
+/////////////////////////////////////////////////
+
+export function log(...args: unknown[]): void {
+	if (logParsingToNativeJS)
+		console.dir(args, {
+			maxStringLength: 1_000,
+			maxArrayLength: 40,
+			compact: false,
+			sorted: false,
+			colors: true,
+			depth: 10,
+		});
+}
+
+export function logcps(...args: unknown[]): void {
+	if (logCps)
+		console.dir(args, {
+			maxStringLength: 1_000,
+			maxArrayLength: 40,
+			compact: false,
+			sorted: false,
+			colors: true,
+			depth: 10,
+		});
+}
+
+/////////////////////////////////////////////////
+
+export function dbg(...args: unknown[]): void {
+	if (logDebug) console.log(...args);
+}
+
+dbg("Hello from the debug side!");

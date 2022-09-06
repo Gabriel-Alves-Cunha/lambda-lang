@@ -6,39 +6,62 @@ export function charStream(input: Char): CharStream {
 	/////////////////////////////////////////////////
 	// Variables:
 
-	let pos = 0, line = 1, column = 0;
+	let pos = 0,
+		lineNum = 1,
+		column = 0,
+		line = readLine(pos);
 
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	/////////////////////////////////////////////////
 	// Functions:
 
+	function readLine(position: number): string {
+		const predicate = (char: Char) => char !== "\n";
+		let str = "";
+
+		while (!eof(position) && predicate(peek(position))) {
+			str += peek(position);
+
+			++position;
+		}
+
+		return str;
+	}
+
 	function next(): Char {
 		// Get current char and increment position:
 		const char = input.charAt(pos++);
 
-		if (char === "\n") ++line, (column = 0);
-		else ++column;
+		if (char === "\n") {
+			line = readLine(pos);
+			column = 0;
+			++lineNum;
+		} else ++column;
 
 		return char;
 	}
 
 	/////////////////////////////////////////////////
 
-	function peek(): Char {
-		return input.charAt(pos);
+	function peek(position?: number): Char {
+		return input.charAt(position ?? pos);
 	}
 
 	/////////////////////////////////////////////////
 
-	function eof(): boolean {
-		return peek() === "";
+	function eof(position?: number): boolean {
+		return peek(position) === "";
 	}
 
 	/////////////////////////////////////////////////
 
 	function croak(msg: string): never {
-		throw new Error(`${msg} (at line: ${line}, column: ${column}).`);
+		throw new Error(`${msg} (At line: ${lineNum}, column: ${column}).
+
+${lineNum} | ${line}
+  | ${" ".repeat(column)}\u1403
+`);
 	}
 
 	/////////////////////////////////////////////////

@@ -1,5 +1,11 @@
 import type { CharStream } from "./char-stream.js";
 import type {
+	VariableName_Token,
+	Punctuation_Token,
+	Operator_Token,
+	Keyword_Token,
+	String_Token,
+	Number_Token,
 	Punctuation,
 	WhiteSpace,
 	Identifier,
@@ -48,7 +54,7 @@ export function tokenStream(input: CharStream): TokenStream {
 
 	/////////////////////////////////////////////////
 
-	function readNumber() {
+	function readNumber(): Number_Token {
 		let hasDot = false;
 
 		const numberAsString = readWhile((char: Char): boolean => {
@@ -61,19 +67,19 @@ export function tokenStream(input: CharStream): TokenStream {
 			return isDigit(char);
 		});
 
-		const token: Token = { type: number, value: Number(numberAsString) };
+		const token: Number_Token = { type: number, value: Number(numberAsString) };
 
 		return token;
 	}
 
 	/////////////////////////////////////////////////
 
-	function readIdentifier() {
+	function readIdentifier(): Keyword_Token | VariableName_Token {
 		const identifier = readWhile(isIdentifier);
 
-		const token: Token = isKeyword(identifier) ?
-			{ type: keyword, value: identifier as Keyword } :
-			{ type: variableName, value: identifier };
+		const token: Keyword_Token | VariableName_Token = isKeyword(identifier)
+			? { type: keyword, value: identifier as Keyword }
+			: { type: variableName, value: identifier };
 
 		return token;
 	}
@@ -81,15 +87,18 @@ export function tokenStream(input: CharStream): TokenStream {
 	/////////////////////////////////////////////////
 
 	function readEscaped(end: Char): string {
-		let escaped = false, str = "";
+		let escaped = false,
+			str = "";
 
 		input.next();
 
 		while (!input.eof()) {
 			const char = input.next();
 
-			if (escaped) (str += char), (escaped = false);
-			else if (char === "\\") escaped = true;
+			if (escaped) {
+				escaped = false;
+				str += char;
+			} else if (char === "\\") escaped = true;
 			else if (char === end) break;
 			else str += char;
 		}
@@ -99,8 +108,8 @@ export function tokenStream(input: CharStream): TokenStream {
 
 	/////////////////////////////////////////////////
 
-	function readString() {
-		const token: Token = { type: string, value: readEscaped("\"") };
+	function readString(): String_Token {
+		const token: String_Token = { type: string, value: readEscaped('"') };
 
 		return token;
 	}
@@ -125,28 +134,28 @@ export function tokenStream(input: CharStream): TokenStream {
 			skipComment();
 			return readNext();
 		}
-		if (char === "\"") return readString();
+		if (char === '"') return readString();
 		if (isDigit(char)) return readNumber();
 		if (isOneOfIndetifierAllowedAsFirstLetter(char)) return readIdentifier();
 		if (isPunctuation(char)) {
-			const token: Token = {
-				type: punctuation,
+			const token: Punctuation_Token = {
 				value: input.next() as Punctuation,
+				type: punctuation,
 			};
 
 			return token;
 		}
 		if (isOperator(char)) {
-			const token: Token = {
-				type: operator,
+			const token: Operator_Token = {
 				value: readWhile(isOperator) as Operator,
+				type: operator,
 			};
 
 			return token;
 		}
 
 		input.croak(
-			`What is this char \`${char}\`? I don't know what to do with it!`,
+			`What is this char \`${char}\`? I don't know what to do with it!`
 		);
 	}
 
@@ -223,11 +232,11 @@ const isDigit = (char: Char): char is Digit => digits.includes(char as Digit);
 /////////////////////////////////////////////////
 // Types:
 
-export type TokenStream = Readonly<
-	{
-		croak(msg: string): never;
-		next(): Token | undefined;
-		peek(): Token | undefined;
-		eof(): boolean;
-	}
->;
+export type TokenStream = Readonly<{
+	croak(msg: string): never;
+	next(): Token | undefined;
+	peek(): Token | undefined;
+	eof(): boolean;
+}>;
+
+/////////////////////////////////////////////////
