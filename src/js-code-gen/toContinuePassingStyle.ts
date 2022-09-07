@@ -16,6 +16,8 @@ import type {
 
 import { number, string, variableName } from "@utils/token-types.js";
 import { generateSymbol } from "./generateSymbol.js";
+import { hasSideEffects } from "./hasSideEffects.js";
+import { stringifyJson } from "@utils/utils.js";
 import {
 	variableDefinition,
 	functionCall,
@@ -28,12 +30,11 @@ import {
 	let_,
 	if_,
 } from "@parser/index.js";
-import { hasSideEffects } from "./hasSideEffects.js";
 
 export function toContinuePassingStyle(
 	expression: AST,
 	continuationCallback: (expression: AST) => AST
-) {
+): AST {
 	return continuePassingStyle(expression, continuationCallback);
 
 	function continuePassingStyle(
@@ -72,7 +73,9 @@ export function toContinuePassingStyle(
 
 			default: {
 				throw new Error(
-					"Dunno how to continuePassingStyle for " + JSON.stringify(expression)
+					`Dunno how to continuePassingStyle for \`${stringifyJson(
+						expression
+					)}\`!`
 				);
 			}
 		}
@@ -147,21 +150,18 @@ export function toContinuePassingStyle(
 		continuationCallback: (expression: AST) => AST
 	): AST {
 		const continuationName: VariableName_AST = {
-			type: variableName,
 			name: generateSymbol("K"),
+			type: variableName,
 		};
-		const body = continuePassingStyle(
-			expression.body,
-			function (body: AST): AST {
-				const ast: FunctionCall_AST = {
-					fn: continuationName,
-					type: functionCall,
-					args: [body],
-				};
+		const body = continuePassingStyle(expression.body, (body: AST): AST => {
+			const ast: FunctionCall_AST = {
+				fn: continuationName,
+				type: functionCall,
+				args: [body],
+			};
 
-				return ast;
-			}
-		);
+			return ast;
+		});
 
 		return continuationCallback({
 			variables: [continuationName, ...expression.variables],
@@ -242,7 +242,7 @@ export function toContinuePassingStyle(
 
 				return continuePassingStyle(
 					expression.args[index]!,
-					function (value: AST): AST {
+					(value: AST): AST => {
 						args[index + 1] = value as Lambda_AST;
 						return loop(args, index + 1);
 					}

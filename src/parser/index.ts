@@ -546,3 +546,8 @@ export const FALSE: Boolean_AST = Object.freeze({
 	type: boolean,
 	value: false,
 } as const);
+
+export const TRUE: Boolean_AST = Object.freeze({
+	type: boolean,
+	value: true,
+} as const);

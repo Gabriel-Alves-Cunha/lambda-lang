@@ -25,10 +25,15 @@ const code3 = `fib = λ(n) {
     fib(n - 2);
 };
 log(fib(10));`;
+const code4 = `(λ(){
+  let (a = 2, b = 5) {
+    print(a + b);
+  };
+})();`;
 
 // get the AST
 const ast = time(
-	() => parse(tokenStream(charStream(code3))),
+	() => parse(tokenStream(charStream(code4))),
 	"Parse code to ast"
 );
 
